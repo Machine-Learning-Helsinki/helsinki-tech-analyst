@@ -1,4 +1,5 @@
 import feedparser
+import requests
 
 def get_data_from_rss(feed_url:str) -> feedparser.FeedParserDict:
     """
@@ -27,4 +28,25 @@ def get_data_from_rss(feed_url:str) -> feedparser.FeedParserDict:
 
     except Exception as e:
         print(f"Error fetching data from RSS feed: {e}")
+        return None
+def get_data_from_api(api):
+    """
+    Fetches data from an API endpoint and returns the response.
+
+    Args:
+        api (str): The API endpoint URL.
+
+    Returns:
+        dict: The JSON response from the API.
+    """
+    try:
+        
+        response = requests.get(api)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Failed to fetch data from API, status code: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Error fetching data from API: {e}")
         return None
