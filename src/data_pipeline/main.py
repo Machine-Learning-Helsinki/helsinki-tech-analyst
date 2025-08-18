@@ -1,7 +1,7 @@
 from .fetch import get_data_from_rss
 from .parse import parse_rss_feed_articles
 from .pure_list import process_list_or_dict
-from .srapping import get_data_from_webpage
+from .storage import create_tables 
 
 RSS_FEED_URL ="https://arcticstartup.com/feed/"
 
@@ -15,6 +15,7 @@ def run_pipeline():
     # Step 1: Fetch data from the RSS feed
     feed = get_data_from_rss(RSS_FEED_URL)
     feed = process_list_or_dict(feed)
+    create_tables()
     
     
     print("INFO: Data fetched from RSS feed.")
