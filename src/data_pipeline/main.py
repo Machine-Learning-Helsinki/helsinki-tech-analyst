@@ -1,7 +1,7 @@
 from .fetch import get_data_from_rss
 from .parse import parse_rss_feed_articles
 from .pure_list import process_list_or_dict
-from .storage import create_tables 
+from .storage import connect_storage, store_data
 
 RSS_FEED_URL ="https://arcticstartup.com/feed/"
 
@@ -13,9 +13,10 @@ def run_pipeline():
     print("INFO: Starting the data pipeline...")
     
     # Step 1: Fetch data from the RSS feed
-    feed = get_data_from_rss(RSS_FEED_URL)
-    feed = process_list_or_dict(feed)
-    create_tables()
+    feed = get_data_from_rss(RSS_FEED_URL) # Extract data from the RSS feed URL
+    feed = process_list_or_dict(feed) # Transform the data into a consistent format
+    
+    
     
     
     print("INFO: Data fetched from RSS feed.")
@@ -30,8 +31,12 @@ def run_pipeline():
         else:
             print("No articles found in the feed.")
     
+    
     else:
         print("ERROR: Failed to fetch data from the RSS feed.")
+
+    # Step 2: Connect to the storage
+    store_data(feed)
     print("INFO: Data pipeline completed.")
 
 
