@@ -12,8 +12,16 @@ def connect_storage():
     load_dotenv()
     DATABASE_URL = os.getenv("DB_URL")
     
-    conn  = psycopg2.connect(DATABASE_URL, sslmode='require')
-    print("✅ Database connection established")
+    if not DATABASE_URL:
+        raise ValueError("DB_URL environment variable is not set")
+
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        print("✅ Database connection successful")
+        return conn
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+        raise
     try: 
         
         with conn.cursor() as cursor:
