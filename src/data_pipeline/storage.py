@@ -12,27 +12,21 @@ def connect_storage():
     load_dotenv()
     DATABASE_URL = os.getenv("DB_URL")
     
-    conn  = psycopg2.connect(DATABASE_URL, sslmode='require')
-    print("✅ Database connection established")
-    try: 
-        
-        with conn.cursor() as cursor:
-            # Create table if it does not exist
-            print(f"Reading Schema File From: {SCHEMA_FILE}")
-            with open(SCHEMA_FILE, 'r') as file:
-                schema = file.read()
-            
-            conn.commit()
-            print("Database connecection has been established.")
+    try:
+
+        conn  = psycopg2.connect(DATABASE_URL, sslmode='require')
+        print("✅ Database connection established")
         return conn
+        
+       
             
     except (Exception, psycopg2.DatabaseError) as error:
         print(f"ERROR: {error}")
     
     
 
-def store_data(feed):
-    conn = connect_storage()   # your function to connect
+def store_data(feed,conn):
+       # your function to connect
     cursor = conn.cursor()
     
     try:
@@ -69,6 +63,16 @@ def store_data(feed):
     except (Exception, psycopg2.DatabaseError) as error:
         print(f"ERROR: Failed to store data - {error}")
         conn.rollback()
-    finally:
-        cursor.close()
-        conn.close()
+    
+def get_data(conn):
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM articles")
+        articles = cursor.fetchall()
+        print("INFO: Fetch data from the articles table")
+        return articles
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"ERROR: Failed to fetch data - {error}")
+        return []
+
+

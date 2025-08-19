@@ -1,7 +1,8 @@
 from .fetch import get_data_from_rss
 from .parse import parse_rss_feed_articles
 from .pure_list import process_list_or_dict
-from .storage import connect_storage, store_data
+from .storage import connect_storage, store_data, get_data
+from ..ml_logic.embedding import process_embeddings
 
 RSS_FEED_URL ="https://arcticstartup.com/feed/"
 
@@ -36,8 +37,17 @@ def run_pipeline():
         print("ERROR: Failed to fetch data from the RSS feed.")
 
     # Step 2: Connect to the storage
-    store_data(feed)
+    conn = connect_storage()
+    store_data(feed,conn)
     print("INFO: Data pipeline completed.")
+
+
+    # Step 3: Getting data from the database and then embeddings it 
+    text = get_data(conn=conn)
+    print(text)
+    process_embeddings(text)
+
+
 
 
 if __name__ == "__main__":
