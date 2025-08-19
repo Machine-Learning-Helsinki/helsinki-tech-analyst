@@ -12,6 +12,8 @@ def get_data_from_rss(feed_url:str) -> feedparser.FeedParserDict:
         list: A list of entries from the RSS feed.
     """
     try:
+        print()
+        print(f"********** Extracting Data From RSS Feed **********\n")
         feed = feedparser.parse(feed_url)
         if 'entries' in feed:
             return feed['entries']
@@ -21,6 +23,7 @@ def get_data_from_rss(feed_url:str) -> feedparser.FeedParserDict:
         if not feed.entries:
             print("No entries found in the RSS feed.")
         print(f"Successfully fetched {len(feed.entries)} entries from the RSS feed.")
+        print(f"********** Data Extraction Completed **********\n")
         return feed
 
 

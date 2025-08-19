@@ -23,7 +23,7 @@ def connect_storage():
                 schema = file.read()
             
             conn.commit()
-            print("Database connecection has been established.")
+            
         return conn
             
     except (Exception, psycopg2.DatabaseError) as error:
