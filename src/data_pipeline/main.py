@@ -3,8 +3,12 @@ from .parse import parse_rss_feed_articles
 from .pure_list import process_list_or_dict
 from .storage import connect_storage, store_data, get_data
 from ..ml_logic.embeddings import process_exceddings
+from ..ml_logic.vector_db import vectordatabasePg
+import os 
+
 
 RSS_FEED_URL = "https://arcticstartup.com/feed/"
+
 
 def run_pipeline(): 
     """
@@ -58,3 +62,6 @@ def run_pipeline():
 
 if __name__ == "__main__":
     run_pipeline()
+    store = vectordatabasePg()
+    store.upsert_articles()
+    

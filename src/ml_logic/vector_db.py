@@ -3,132 +3,151 @@ import re
 import math
 import hashlib
 from typing import List, Dict, Optional, Iterable, Tuple
+from dotenv import load_dotenv
+from ..data_pipeline.storage import connect_storage
 
 import psycopg2
 import psycopg2.extras
 import numpy as np
 
-PG_HOST = os.getenv("PG_HOST", "localhost")
-PG_PORT = int(os.getenv("PG_PORT", "5432"))
-PG_DB   = os.getenv("PG_DB", "appdb")
-PG_USER = os.getenv("PG_USER", "app")
-PG_PASS = os.getenv("PG_PASS", "app")
 DB_URL = os.getenv("DB_URL")
-
-EMBED_DIM = int(os.getenv("EMBED_DIM","512"))
-
+EMBED_DIM = int(os.getenv("EMBED_DIM", "512"))
 TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
 
-def tokenize(text:str) -> List[str]:
-    #lowercase, keep alphanumerics
+def tokenize(text: str) -> List[str]:
     return TOKEN_RE.findall(text.lower())
 
-#-custom hashing encoder
 def hash_str_to_bucket(s: str, dim: int) -> int:
     h = hashlib.sha1(s.encode("utf-8")).hexdigest()
-    return int(h,16) % dim
+    return int(h, 16) % dim
 
 def encode_custom(text: str, dim: int = EMBED_DIM, use_bigrams: bool = True):
     toks = tokenize(text)
-    vec = np.zeros(dim, dtype= np.float32)
+    vec = np.zeros(dim, dtype=np.float32)
 
-    #unigrams
-    for t in toks:
-        idx = hash_str_to_bucket(f"uni::{t}", dim)
-        vec[idx]+= 1.0
-    
-    #bigrams
-    if use_bigrams and len(toks) >= 2:
-        for a,b in zip(toks, toks[1:]):
-            idx = hash_str_to_bucket(f"bi::{a}|{b}", dim)
-            vec[idx]+= 1.0
-    
-    #damp very frequent counts
-    np.log1p(vec, out=vec)
-    norm = np.linalg.norm(vec)
-    if norm > 0:
-        vec/= norm
+    try:
+        for t in toks:
+            idx = hash_str_to_bucket(f"uni::{t}", dim)
+            vec[idx] += 1.0
+
+        if use_bigrams and len(toks) >= 2:
+            for a, b in zip(toks, toks[1:]):
+                idx = hash_str_to_bucket(f"bi::{a}|{b}", dim)
+                vec[idx] += 1.0
+
+        np.log1p(vec, out=vec)
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+    except Exception as e:
+        print(f"ERROR encoding text: {e}")
     return vec
 
 
-
-# Postgres + pgvector client
 class vectordatabasePg:
-    def __init__(self, link):
-        self.conn = psycopg2.connect(link)
-        self.conn.autocommit = True
-    
-
+    def __init__(self):
+        try:
+            self.conn = connect_storage()
+            self.conn.autocommit = True
+            print("INFO: Connected to PostgreSQL successfully.")
+        except Exception as e:
+            print(f"ERROR connecting to PostgreSQL: {e}")
+            self.conn = None
 
     def close(self):
-        if self.conn:
-            self.conn.close()
+        try:
+            if self.conn:
+                self.conn.close()
+                print("INFO: Connection closed.")
+        except Exception as e:
+            print(f"ERROR closing connection: {e}")
 
-    def create_ivfflat_index(self, lists: int= 100, use_cosine: bool = True):
-        opclass = "vector_cosine_ops_v2" if use_cosine else "vector_l2_ops_v2"
-        with self.conn.cursor() as cur:
-            cur.execute(f"""
-                DROP INDEX IF EXISTS idx_articles_vector""")
-            cur.execute(
-                f"CREATE INDEX articles_embedding_idx ON articles "
-                f"USING ivfflat (embedding {opclass}) WITH (lists = %s);",
-                (lists,)
-            )
-            cur.execute(f"ANALYZE articles;")
-            print("INFO: Index created successfully.")
-    
-    def upsert_articles(self, docs: Iterable[Dict[str, str]]):
-        print("Inserting the vector articles :)")
-        with self.conn.cursor() as cur:
-            for d in docs:
-                doc_id = d["id"]
-                title = d.get("title","")
-                link = d.get("link","")
-                source_name = d.get("source_name")
-                summary = d.get("summary", "")
-                published = d.get("published")
-
-
-                emb = encode_custom(summary, EMBED_DIM).tolist()
+    def create_ivfflat_index(self, lists: int = 100, use_cosine: bool = True):
+        if not self.conn:
+            print("ERROR: No DB connection.")
+            return
+        try:
+            opclass = "vector_cosine_ops" if use_cosine else "vector_l2_ops"
+            with self.conn.cursor() as cur:
+                cur.execute("DROP INDEX IF EXISTS idx_articles_vector")
                 cur.execute(
-                    """ 
-                    INSERT INTO articles (id, title, link, published, summary, source_name,embedding)
-                    VALUES(%s, %s, %s, %s,%s,%s,%s )
-                    ON CONFLICT(id) DO UPDATE SET
-                    title = EXCLUDED.title,
-                    link = EXCLUDED.link,
-                    published = EXCLUDED.published,
-                    summary = EXCLUDED.summary,
-                    source_name = EXCLUDED.source_name
-                    embedding = EXCLUDED.embedding;
+                    f"""
+                    CREATE INDEX articles_embedding_idx
+                    ON articles USING ivfflat (embedding {opclass})
+                    WITH (lists = %s);
                     """,
-                    (doc_id, title,link,published,summary,source_name, emb)
-                   )           
-        
-        print("INFO: Articles are updated with embedding title.")
-     
+                    (lists,)
+                )
+                cur.execute("ANALYZE articles;")
+                print("INFO: Index created successfully.")
+        except Exception as e:
+            print(f"ERROR creating index: {e}")
 
-    def query(self, query_text:str, k: int= 5) -> List[Tuple[str,str,str,str,str,float]]:
-        q_emb = encode_custom(query_text, EMBED_DIM).tolist()
+    def upsert_articles(self):
+        if not self.conn:
+            print("ERROR: No DB connection.")
+            return
+        print("INFO: Inserting/updating article embeddings...")
+        try:
+            with self.conn.cursor() as cur:
+                # Ensure embedding column exists
+                try:
+                    cur.execute(
+                        f"ALTER TABLE articles ADD COLUMN IF NOT EXISTS embedding vector({EMBED_DIM})"
+                    )
+                    print("INFO: Verified embedding column exists.")
+                except Exception as e:
+                    print(f"ERROR adding embedding column: {e}")
 
+                # Fetch articles
+                cur.execute("SELECT * FROM articles;")
+                docs = cur.fetchall()
+                if not docs:
+                    print("INFO: No articles found.")
+                    return
+
+                docs = [dict(zip([col[0] for col in cur.description], row)) for row in docs]
+                print(f"INFO: Found {len(docs)} articles.")
+
+                for d in docs:
+                    try:
+                        doc_id = d.get("articles_id") or d.get("id")
+                        summary = d.get("summary", "")
+                        emb = encode_custom(summary, EMBED_DIM).tolist()
+
+                        cur.execute(
+                            """
+                            UPDATE articles
+                            SET embedding = %s
+                            WHERE articles_id = %s
+                            """,
+                            (emb, doc_id)
+                        )
+                        print(f"INFO: Updated embedding for article_id={doc_id}")
+                    except Exception as e:
+                        print(f"ERROR updating article {d}: {e}")
+        except Exception as e:
+            print(f"ERROR in upsert_articles: {e}")
+
+    def fetch_all_articles(self, table: str = "articles") -> List[Dict]:
+        """
+        Fetch all rows (id, title, content, embedding)
+        """
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute(
-                """
-                    SELECT  id, title, link, published, summary,source_name,(embedding <-> %s) AS distance
-                    FROM articles
-                    ORDER BY embedding <-> %s 
-                    LIMIT %s
-                    
-                """,
-                (q_emb,q_emb,k)
-            )
+            cur.execute(f"SELECT id, title, content, embedding FROM {table};")
             rows = cur.fetchall()
+            return [dict(r) for r in rows]
 
-            return [(r["id"],r["title"],r["link"],r["published"],r["summary"],r["source_name"],float(r["distance"])) for r in rows] # type: ignore
-
-
-    def count(self) ->int:
-        with self.conn.cursor() as cur : 
-            cur.execute("SELECT COUNT(*) FROM articles ;")
-            return cur.fetchone()[0]  # type: ignore
-    
+    def count(self) -> int:
+        if not self.conn:
+            print("ERROR: No DB connection.")
+            return 0
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM articles;")
+                count = cur.fetchone()[0]
+                print(f"INFO: Articles count = {count}")
+                return count
+        except Exception as e:
+            print(f"ERROR counting articles: {e}")
+            return 0
