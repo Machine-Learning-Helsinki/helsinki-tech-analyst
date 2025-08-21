@@ -8,6 +8,12 @@ import psycopg2
 import psycopg2.extras
 import numpy as np
 
+PG_HOST = os.getenv("PG_HOST", "localhost")
+PG_PORT = int(os.getenv("PG_PORT", "5432"))
+PG_DB   = os.getenv("PG_DB", "appdb")
+PG_USER = os.getenv("PG_USER", "app")
+PG_PASS = os.getenv("PG_PASS", "app")
+
 EMBED_DIM = int(os.getenv("EMBED_DIM","512"))
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
@@ -46,4 +52,42 @@ def encode_custom(text: str, dim: int = EMBED_DIM, use_bigrams: bool = True):
 
 
 # Postgres + pgvector client
+class vectordatabasePg:
+    def __init__(self, host: str = PG_HOST,
+                 port: int = PG_PORT,
+                 db: str = PG_DB,
+                 user: str = PG_USER,
+                 password: str = PG_PASS):
+        self.conn = psycopg2.connect(
+            host=host, port=port, dbname=db, user=user, password=password
+        )
+        self.conn.autocommit = True
+    @classmethod
+    def anotherCons(self, link:str):
+        self.conn = psycopg2.connect(link)
+
+
+    def close(self):
+        if self.conn:
+            self.conn.close()
+
+    def create_ivfflat_index(self, lists: int= 100, use_cosine: bool = True):
+        opclass = "vector_cosine_ops_v2" if use_cosine else "vector_l2_ops_v2"
+        with self.conn.cursor() as cur:
+            cur.execute(f"""
+                DROP INDEX IF EXISTS idx_articles_vector""")
+            cur.execute(
+                f"CREATE INDEX articles_embedding_idx ON articles "
+                f"USING ivfflat (embedding {opclass}) WITH (lists = %s);",
+                (lists,)
+            )
+            cur.execute(f"ANALYZE articles;")
+            print("INFO: Index created successfully.")
+    
+    
+
+        
+    
+
+
 
