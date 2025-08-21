@@ -84,10 +84,58 @@ class vectordatabasePg:
             cur.execute(f"ANALYZE articles;")
             print("INFO: Index created successfully.")
     
-    
+    def upsert_articles(self, docs: Iterable[Dict[str, str]]):
+        print("Inserting the vector articles :)"):
+        with self.conn.cursor() as cur:
+            for d in docs:
+                doc_id = d["id"]
+                title = d.get("title","")
+                link = d.get("link","")
+                source_name = d.get("source_name")
+                summary = d.get("summary", "")
+                published = d.get("published")
 
+
+                emb = encode_custom(summary, EMBED_DIM).tolist()
+                cur.execute(
+                    """ 
+                    INSERT INTO articles (id, title, link, published, summary, source_name,embedding)
+                    VALUES(%s, %s, %s, %s,%s,%s,%s )
+                    ON CONFLICT(id) DO UPDATE SET
+                    title = EXCLUDED.title,
+                    link = EXCLUDED.link,
+                    published = EXCLUDED.published,
+                    summary = EXCLUDED.summary,
+                    source_name = EXCLUDED.source_name
+                    embedding = EXCLUDED.embedding;
+                    """,
+                    (doc_id, title,link,published,summary,source_name, emb)
+                   )           
         
+        print("INFO: Articles are updated with embedding title.")
+     
+
+    def query(self, query_text:str, k: int= 5) -> List[Tuple[str,str,str,str,str,float]]:
+        q_emb = encode_custom(query_text, EMBED_DIM).tolist()
+
+        with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute(
+                """
+                    SELECT  id, title, link, published, summary,source_name,(embedding <-> %s) AS distance
+                    FROM articles
+                    ORDER BY embedding <-> %s 
+                    LIMIT %s
+                    
+                """,
+                (q_emb,q_emb,k)
+            )
+            rows = cur.fetchall()
+
+            return [(r["id"],r["title"],r["link"],r["published"],r["summary"],r["source_name"],float(r["distance"])) for r in rows] # type: ignore
+
+
+    def count(self) ->int:
+        with self.conn.cursor() as cur : 
+            cur.execute("SELECT COUNT(*) FROM articles ;")
+            return cur.fetchone()[0]  # type: ignore
     
-
-
-
