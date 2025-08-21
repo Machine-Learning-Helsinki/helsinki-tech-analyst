@@ -13,6 +13,7 @@ PG_PORT = int(os.getenv("PG_PORT", "5432"))
 PG_DB   = os.getenv("PG_DB", "appdb")
 PG_USER = os.getenv("PG_USER", "app")
 PG_PASS = os.getenv("PG_PASS", "app")
+DB_URL = os.getenv("DB_URL")
 
 EMBED_DIM = int(os.getenv("EMBED_DIM","512"))
 
@@ -53,18 +54,10 @@ def encode_custom(text: str, dim: int = EMBED_DIM, use_bigrams: bool = True):
 
 # Postgres + pgvector client
 class vectordatabasePg:
-    def __init__(self, host: str = PG_HOST,
-                 port: int = PG_PORT,
-                 db: str = PG_DB,
-                 user: str = PG_USER,
-                 password: str = PG_PASS):
-        self.conn = psycopg2.connect(
-            host=host, port=port, dbname=db, user=user, password=password
-        )
-        self.conn.autocommit = True
-    @classmethod
-    def anotherCons(self, link:str):
+    def __init__(self, link):
         self.conn = psycopg2.connect(link)
+        self.conn.autocommit = True
+    
 
 
     def close(self):
