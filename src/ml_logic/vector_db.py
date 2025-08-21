@@ -85,7 +85,7 @@ class vectordatabasePg:
             print("INFO: Index created successfully.")
     
     def upsert_articles(self, docs: Iterable[Dict[str, str]]):
-        print("Inserting the vector articles :)"):
+        print("Inserting the vector articles :)")
         with self.conn.cursor() as cur:
             for d in docs:
                 doc_id = d["id"]
