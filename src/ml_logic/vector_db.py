@@ -21,6 +21,8 @@ def hash_str_to_bucket(s: str, dim: int) -> int:
     h = hashlib.sha1(s.encode("utf-8")).hexdigest()
     return int(h, 16) % dim
 
+
+
 def encode_custom(text: str, dim: int = EMBED_DIM, use_bigrams: bool = True):
     toks = tokenize(text)
     vec = np.zeros(dim, dtype=np.float32)
