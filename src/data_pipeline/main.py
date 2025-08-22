@@ -5,6 +5,7 @@ from .storage import connect_storage, store_data, get_data
 from ..ml_logic.embeddings import process_exceddings
 from ..ml_logic.vector_db import vectordatabasePg
 import os 
+from ..ml_logic.rag import answer_questions
 
 
 RSS_FEED_URL = "https://arcticstartup.com/feed/"
@@ -61,7 +62,9 @@ def run_pipeline():
 
 
 if __name__ == "__main__":
-    run_pipeline()
+    
     store = vectordatabasePg()
     store.upsert_articles()
+    question = input("Enter your question: ")
+    answer_questions(question)
     
