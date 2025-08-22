@@ -66,5 +66,5 @@ if __name__ == "__main__":
     store = vectordatabasePg()
     store.upsert_articles()
     question = input("Enter your question: ")
-    answer_questions(question)
+    print(answer_questions(question))
     

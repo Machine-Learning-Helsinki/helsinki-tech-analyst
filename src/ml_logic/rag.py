@@ -5,9 +5,17 @@ from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from ..data_pipeline.storage import connect_storage
 import chromadb
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 load_dotenv()
+
+# The client gets the API key from the environment variable `GEMINI_API_KEY`.
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+
+
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 chromo_client = chromadb.CloudClient(
@@ -30,7 +38,7 @@ def answer_questions(question: str):
         n_results=5,
         include=["documents"]
     )
-    print(results)
+    
     if not results["documents"]:
         return "No relevant documents found."
     context = results["documents"][0]
@@ -44,16 +52,16 @@ def answer_questions(question: str):
     )
     print("INFO: Context retrieved from ChromoDB.")
 
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
 
-    response = client.chat.completions.create(
-        model="gpt-5",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+        
     )
 
     print("INFO: Response generated from OpenAI API.")
-    print(response)
+    return response.candidates[0].content.parts[0].text
 
     
 
