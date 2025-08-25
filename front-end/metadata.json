@@ -1,0 +1,5 @@
+{
+  "name": "FastAPI AI Question Answering",
+  "description": "A simple and elegant user interface to ask questions to a FastAPI backend and display the AI-generated answers in real-time.",
+  "requestFramePermissions": []
+}

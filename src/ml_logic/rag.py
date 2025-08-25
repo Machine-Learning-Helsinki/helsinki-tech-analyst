@@ -3,75 +3,94 @@ import psycopg2
 import numpy as np
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
-from ..data_pipeline.storage import connect_storage
 import chromadb
 from google import genai
 from google.genai import types
 
 load_dotenv()
 
-# The client gets the API key from the environment variable `GEMINI_API_KEY`.
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-
-
-
-
-model = SentenceTransformer("all-MiniLM-L6-v2")
-chromo_client = chromadb.CloudClient(
-    api_key=os.getenv("CHROMADB_API_KEY"),
-    tenant=os.getenv("CHROMADB_TENANT"),
-    database=os.getenv("CHROMADB_DATABASE"),
-)
-collection = chromo_client.get_or_create_collection(name="article_embeddings")
-
-
 
 def answer_questions(question: str):
+    """
+    Main function to answer a question using embeddings, ChromaDB, and Gemini API.
+    """
+    try:
+        print("DEBUG: Initializing embedding model...")
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        print("DEBUG: Embedding model loaded successfully.")
 
-    print("INFO: Generating embeddings for the question...")
-    q_embedding = model.encode([question])[0].tolist()
+        # Connect to ChromaDB
+        print("DEBUG: Connecting to ChromaDB Cloud...")
+        chromo_client = chromadb.CloudClient(
+            api_key=os.getenv("CHROMADB_API_KEY"),
+            tenant=os.getenv("CHROMADB_TENANT"),
+            database=os.getenv("CHROMADB_DATABASE"),
+        )
 
-    print("INFO: Querying ChromoDB for top5 results...")
-    results = collection.query(
-        query_embeddings=[q_embedding],
-        n_results=5,
-        include=["documents"]
-    )
-    
-    if not results["documents"]:
-        return "No relevant documents found."
-    context = results["documents"][0]
+        if not chromo_client:
+            print("ERROR: ChromoDB client not initialized.")
+            return "ChromoDB client not initialized. Check your API keys and environment variables."
+        print("INFO: ChromoDB client initialized successfully.")
 
-    prompt = (
-        "You are a helpful assistant. Use the following context to answer the question.\n\n"
-        "to answer the question, use the context provided below:\n\n"
-        f"Context: {context}\n\n"   
-        f"Question: {question}\n\n"
-        "Answer the question based on the context provided."
-    )
-    print("INFO: Context retrieved from ChromoDB.")
+        # Get or create collection
+        print("DEBUG: Getting or creating 'article_embeddings' collection...")
+        collection = chromo_client.get_or_create_collection(name="article_embeddings")
+        if not collection:
+            print("ERROR: Collection not found or could not be created.")
+            return "Collection not found or could not be created. Check your ChromoDB setup."
+        print("INFO: Collection 'article_embeddings' ready.")
 
-    
+        # Connect to Gemini API
+        print("DEBUG: Connecting to Gemini API...")
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        if not client:
+            print("ERROR: Gemini client not initialized.")
+            return "Gemini client not initialized. Check your API keys and environment variables."
+        print("INFO: Gemini client initialized successfully.")
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
+        # Encode the question
+        print(f"DEBUG: Encoding question: {question}")
+        q_embedding = model.encode([question])[0].tolist()
+        print(f"INFO: Question embedding generated. Dimension: {len(q_embedding)}")
+
+        # Query ChromaDB
+        print("DEBUG: Querying ChromaDB for top 5 similar documents...")
+        results = collection.query(
+            query_embeddings=[q_embedding],
+            n_results=5,
+            include=["documents"]
+        )
+        print(f"DEBUG: Raw ChromaDB query results: {results}")
+
+        if not results.get("documents"):
+            print("WARNING: No relevant documents found in ChromaDB.")
+            return "No relevant documents found."
         
-    )
+        context_docs = results["documents"][0]
+        print(f"INFO: Retrieved {len(context_docs)} context documents.")
 
-    print("INFO: Response generated from OpenAI API.")
-    return response.candidates[0].content.parts[0].text
+        # Build prompt
+        prompt = (
+            "You are a helpful assistant. Use the following context to answer the question.\n\n"
+            "Context:\n" + "\n".join(context_docs) + "\n\n"
+            f"Question: {question}\n\n"
+            "Answer the question based on the context provided."
+        )
+        print("DEBUG: Prompt built successfully.")
 
-    
+        # Call Gemini API
+        print("DEBUG: Sending prompt to Gemini API...")
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        print("INFO: Response generated from Gemini API.")
 
+        # Extract text
+        final_answer = response.candidates[0].content.parts[0].text
+        print(f"DEBUG: Final answer extracted: {final_answer[:100]}...")  # preview only first 100 chars
+        return final_answer
 
-
-    #Build prompt
-
-
-
-
-
-
-
+    except Exception as e:
+        print(f"ERROR: Exception occurred: {e}")
+        return str(e)
