@@ -10,7 +10,7 @@ app = FastAPI()
 class Question(BaseModel):
     question: str
     context: Union[str, None] = None
-s
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,6 +29,8 @@ async def asking(question: Question):
         return {"answer": answer_questions(question.question, question.context)}
     else:
         return {"answer": answer_questions(question.question)}
+
+
     
 
 
