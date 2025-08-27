@@ -18,30 +18,68 @@ st.subheader("Data Overview")
 st.write("Here is the data retrieved from the database:")
 st.dataframe(data)
 
-
-time = []
-for d in data:
-    time.append(d[7])
-
-time_dict = {}
-for t in time : 
-    only_date = t.date()
-    print(only_date)
-    if only_date in time_dict:
-        time_dict[only_date] += 1
-    else:
-        time_dict[only_date] = 1
+def convert_date(d):
+    try:
+        return d.date()
+    except Exception as e:
+        print(f"ERROR: Failed to convert date - {e}")
+        return None
 
 
-print(time_dict)
+def count_articles_per_day(data):
+    try:
+        time = []
+        for d in data:
+            time.append(d[4])
+
+        time_dict = {}
+        for t in time : 
+            only_date = t.date()
+            if only_date in time_dict:
+                time_dict[only_date] += 1
+            else:
+                time_dict[only_date] = 1
 
 
-time_dict = {"Date": list(time_dict.keys()), "Number of Articles": list(time_dict.values())} 
+
+        time_dict = {"Date": list(time_dict.keys()), "Number of Articles": list(time_dict.values())}
+        return time_dict
+    except Exception as e:
+        print(f"ERROR: Failed to count articles per day - {e}")
+        return {"Date": [], "Number of Articles": []}
+
+def filter_data_by_source(data):
+    articlesTotalSources = {}
+    sources = []
+    Number_of_articles_per_source = []
+    for d in data:
+        source = d[1]
+        l = sources.split(",")
+        print(l)
+        if source not in sources:
+            sources.append(source)
+            Number_of_articles_per_source.append(1)
+        else:
+            index = sources.index(source)
+            Number_of_articles_per_source[index] += 1
+    articlesTotalSources = {"Source": sources, "Number of Articles": Number_of_articles_per_source}
+    return articlesTotalSources
+
+
+            
+        
+    sources = list(set(sources))
+
+
 
 
 st.title("Number of Articles Over Time")
-st.bar_chart(data=time_dict,x='Date',y='Number of Articles',use_container_width=True)
+st.bar_chart(data=count_articles_per_day(data),x='Date',y='Number of Articles',use_container_width=True)
 
+print("INFO: Displayed number of articles over time.")
+st.title("Number of Articles by Source")
+
+st.bar_chart(data=filter_data_by_source(data),x='Source',y='Number of Articles',use_container_width=True)
 
 
     

@@ -45,15 +45,17 @@ def store_data(feed,conn):
                 else:
                     cursor.execute(
                         """
-                        INSERT INTO articles (title, link, published, summary, source_name)
-                        VALUES (%s, %s, %s, %s, %s)
+                        INSERT INTO articles (link_name, title, link, published, summary, authors,tags)
+                        VALUES (%s,%s, %s, %s, %s, %s, %s)
                         """,
                         (
+                            entry.get('link_name', ''),
                             entry.get('title', ''),
                             entry.get('link', ''),
                             entry.get('published', ''),
                             entry.get('summary', ''),
-                            entry.get('source_name', '')
+                            entry.get('authors', ''),
+                            entry.get('tags', '')
                         )
                     )
             conn.commit()

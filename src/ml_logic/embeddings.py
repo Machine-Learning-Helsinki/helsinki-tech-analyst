@@ -9,7 +9,7 @@ def process_exceddings(text):
     load_dotenv()
 
     print("STEP 1: Preparing sentences for embeddings...")
-    sentences = [article[1] for article in text]  # Assuming (id, content, ...) format
+    sentences = [article[2] for article in text]  # Assuming (id, content, ...) format
     print(f"INFO: Found {len(sentences)} sentences to embed.")
 
     print("STEP 2: Loading embedding model...")
