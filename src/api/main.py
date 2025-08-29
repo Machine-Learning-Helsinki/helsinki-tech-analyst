@@ -4,7 +4,8 @@ from pydantic import BaseModel
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..ml_logic.rag import answer_questions
+
+from ..ml_logic.rag import answer_questions,answer_question_for_postgre
 
 app = FastAPI()
 class Question(BaseModel):
@@ -26,9 +27,10 @@ async def asking(question: Question):
     print(question)
     
     if question.context:
-        return {"answer": answer_questions(question.question, question.context)}
+
+        return {"answer": answer_question_for_postgre(question.question, question.context)}
     else:
-        return {"answer": answer_questions(question.question)}
+        return {"answer": answer_question_for_postgre(question.question)}
 
 
     

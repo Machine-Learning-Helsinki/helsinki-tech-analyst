@@ -1,7 +1,13 @@
 from typing import List, Dict, Any
 import feedparser
+from deep_translator import GoogleTranslator
+
+
+  # Good morning
+
 
 def parse_rss_feed_articles(feed: feedparser.FeedParserDict,name) -> List[Dict[str, Any]]:
+
     """
     Parses the articles from a feedparser.FeedParserDict object.
 
@@ -13,21 +19,23 @@ def parse_rss_feed_articles(feed: feedparser.FeedParserDict,name) -> List[Dict[s
     """
     try:
         articles = []
+        
     
         if not feed : 
             return articles
         for entry in feed:
             article = {
                 "link_name" : name,
-                'title': entry.get('title', ''),
+                'title': translate_to_english(entry.get('title', '')),
                 'link': entry.get('link', ''),
                 'published': entry.get('published', ''),
-                'summary': entry.get('summary', ''),
+                'summary': translate_to_english(entry.get('summary', '')),
                 "authors": [author['name'] for author in entry.get('authors', [])] if entry.get("authors") else [],
-                "tags": [tag['term'] for tag in entry.get('tags', [])] if entry.get("tags") else []
+                "tags": [translate_to_english(tag['term']) for tag in entry.get('tags', [])] if entry.get("tags") else []
             }
             articles.append(article)
             print(f"INFO: Parsed {len(articles)} articles from the feed.")
+        return articles
     except Exception as e:
         print(f"ERROR: Failed to parse articles - {e}")
 
@@ -35,4 +43,12 @@ def parse_rss_feed_articles(feed: feedparser.FeedParserDict,name) -> List[Dict[s
     
        
     
-    return articles
+    
+def translate_to_english(text) -> str:
+    translator = GoogleTranslator(source="fi", target="en")
+    try:
+        translated = translator.translate(text)
+        return translated
+    except Exception as e:
+        print(f"ERROR: Translation failed - {e}")
+        return text

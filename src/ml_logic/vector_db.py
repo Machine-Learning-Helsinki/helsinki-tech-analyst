@@ -112,7 +112,7 @@ class vectordatabasePg:
                 for d in docs:
                     try:
                         doc_id = d.get("articles_id") or d.get("id")
-                        summary = d.get("summary", "")
+                        summary = d.get("title", "")
                         emb = encode_custom(summary, EMBED_DIM).tolist()
 
                         cur.execute(
@@ -151,3 +151,33 @@ class vectordatabasePg:
         except Exception as e:
             print(f"ERROR counting articles: {e}")
             return 0
+    def query_similar_articles(self, query_text: str, top_k: int = 5):
+        """
+        Query the vector database for the most similar articles to the given text.
+        Uses <-> operator for cosine distance (pgvector).
+        """
+        if not self.conn:
+            print("ERROR: No DB connection.")
+            return []
+
+        try:
+            # Generate embedding for the query
+            query_vec = encode_custom(query_text, EMBED_DIM).tolist()
+            vec_str = "[" + ",".join([str(x) for x in query_vec]) + "]"
+
+            with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT articles_id, link_name, title, link, published, summary, authors,tags,embedding
+                    FROM articles
+                    WHERE embedding IS NOT NULL
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s;
+                    """,
+                    (vec_str, top_k)
+                )
+                rows = cur.fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            print(f"ERROR querying similar articles: {e}")
+            return []

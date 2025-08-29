@@ -12,7 +12,7 @@ from ..ml_logic.rag import answer_questions
 finland_rss_feeds_with_urls = [
     ("Finland Today RSS Feed", "https://finlandtoday.fi/feed"),
     ("Helsinki Times RSS Feed", "https://helsinkitimes.fi/?format=feed"),
-    ("Iltalehti RSS Feed", "https://iltalehti.fi/rss/rss.xml"),
+    ("Iltalehti RSS Feed", "https://www.iltalehti.fi/rss/uutiset.xml"),
     ("Daily Finland RSS Feed", "https://dailyfinland.fi/feed/latest-.."),  # truncated URL as shown
     ("Ilkkapohjalainen RSS Feed", "https://fiare-prod-qt-images.s3.amazonaws.com"),  # truncated or generic placeholder
     ("Länsi-Savo RSS Feed", "https://lansi-savo.fi/feed/rss"),
@@ -60,6 +60,13 @@ finland_rss_feeds_with_urls = [
     ("Kainuun Sanomat RSS Feed", "https://www.kainuunsanomat.fi/feed")
 ]
 
+finland_rss_feeds_with_urls_testing  =  [
+    ("Iltalehti RSS Feed", "https://www.iltalehti.fi/rss/uutiset.xml"),
+    ("Hankasalmen Sanomat RSS Feed", "https://hankasalmensanomat.fi/feed/rss"),
+     ("Hämeen Sanomat RSS Feed", "https://hameensanomat.fi/feed/rss"),
+     ("Helsinki Times RSS Feed", "https://helsinkitimes.fi/?format=feed")
+]
+
 
 
 
@@ -80,7 +87,7 @@ def run_pipeline():
     print("INFO: ✅ Successfully connected to storage.")
 
     # STEP 2: Fetch & Process
-    for name, url in finland_rss_feeds_with_urls:
+    for name, url in finland_rss_feeds_with_urls_testing:
         print(f"\nFetching data from: {name} - {url}")
         if not url:
             print(f"WARNING: ⚠️ No RSS URL for {name}, skipping...")
