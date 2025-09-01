@@ -61,8 +61,7 @@ finland_rss_feeds_with_urls = [
 ]
 
 finland_rss_feeds_with_urls_testing  =  [
-    ("Iltalehti RSS Feed", "https://www.iltalehti.fi/rss/uutiset.xml"),
-    ("Hankasalmen Sanomat RSS Feed", "https://hankasalmensanomat.fi/feed/rss"),
+   
      ("Hämeen Sanomat RSS Feed", "https://hameensanomat.fi/feed/rss"),
      ("Helsinki Times RSS Feed", "https://helsinkitimes.fi/?format=feed")
 ]
@@ -87,7 +86,7 @@ def run_pipeline():
     print("INFO: ✅ Successfully connected to storage.")
 
     # STEP 2: Fetch & Process
-    for name, url in finland_rss_feeds_with_urls_testing:
+    for name, url in finland_rss_feeds_with_urls:
         print(f"\nFetching data from: {name} - {url}")
         if not url:
             print(f"WARNING: ⚠️ No RSS URL for {name}, skipping...")

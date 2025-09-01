@@ -111,8 +111,13 @@ class vectordatabasePg:
 
                 for d in docs:
                     try:
+                        summary = ""
                         doc_id = d.get("articles_id") or d.get("id")
-                        summary = d.get("title", "")
+                        if d.get("summary") is None or d.get("summary").strip() == "":
+                            print(f"WARNING: Article id={doc_id} has no summary, skipping...")
+                            summary = d.get("title", "")
+                        else: 
+                            summary = d.get("summary", "")
                         emb = encode_custom(summary, EMBED_DIM).tolist()
 
                         cur.execute(

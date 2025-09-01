@@ -14,7 +14,13 @@ def connect_storage():
     
     try:
 
-        conn  = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn = psycopg2.connect(
+            dbname="mydatabase",
+            user="ayush",
+            password="mypassword",
+            host="localhost",   # or "db" if running inside another container in same network
+            port="5433"
+        )
         print("✅ Database connection established")
         return conn
         
@@ -28,10 +34,11 @@ def connect_storage():
 def store_data(feed,conn):
        # your function to connect
     cursor = conn.cursor()
-    
+    cursor.execute(open(SCHEMA_FILE, "r").read())
     try:
         if feed:
             for entry in feed:
+                cursor.execute(open(SCHEMA_FILE, "r").read())
                 cursor.execute(
                     """
                     SELECT 1 FROM articles WHERE link = %s
@@ -58,6 +65,8 @@ def store_data(feed,conn):
                             entry.get('tags', '')
                         )
                     )
+                  
+                    
             conn.commit()
             print("INFO: Data stored successfully.")
         else:
