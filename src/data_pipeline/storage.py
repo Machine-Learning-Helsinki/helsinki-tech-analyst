@@ -14,13 +14,21 @@ def connect_storage():
     
     try:
 
+        
+        host = os.getenv("DB_HOST", "db")      # default to 'db' if env missing
+        port = int(os.getenv("DB_PORT", 5432)) # default to 5432
+        user = os.getenv("DB_USER", "ayush")
+        password = os.getenv("DB_PASSWORD", "mypassword")
+        dbname = os.getenv("DB_NAME", "mydatabase")
+
+        print(f"🔌 Connecting to Postgres at {host}:{port} as {user}")
         conn = psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),  # "db" (service name)
-        port=os.getenv("DB_PORT")   # 5432 (inside network)
-    )
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            dbname=dbname
+        )
         print("✅ Database connection established")
         return conn
         
