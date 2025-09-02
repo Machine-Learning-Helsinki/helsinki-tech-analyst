@@ -15,12 +15,12 @@ def connect_storage():
     try:
 
         conn = psycopg2.connect(
-            dbname="mydatabase",
-            user="ayush",
-            password="mypassword",
-            host="localhost",   # or "db" if running inside another container in same network
-            port="5433"
-        )
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),  # "db" (service name)
+        port=os.getenv("DB_PORT")   # 5432 (inside network)
+    )
         print("✅ Database connection established")
         return conn
         

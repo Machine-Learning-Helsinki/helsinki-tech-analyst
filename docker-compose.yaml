@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: mydatabase
     ports:
-      - "5433:5432"   # host:container
+      - "5432:5432"   # expose for pgAdmin or host
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -23,8 +23,20 @@ services:
       - "5050:80"
     depends_on:
       - db
-  
-  
+
+  pipeline:   # 👈 your Python app
+    build: .
+    container_name: pipeline_container
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_NAME: mydatabase
+      DB_USER: ayush
+      DB_PASSWORD: mypassword
+      DB_HOST: db      # 👈 service name, not localhost
+      DB_PORT: 5432
+    command: ["python", "-m", "data_pipeline.main"]
 
 volumes:
   postgres_data:
