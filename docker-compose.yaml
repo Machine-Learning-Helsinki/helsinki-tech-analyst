@@ -23,11 +23,7 @@ services:
       - "5050:80"
     depends_on:
       - db
-  python:
-    build: .
-    container_name: ayushghimire95/data-pipeline:v1.2
-    depends_on:
-      - db
+  
   
 
 volumes:
