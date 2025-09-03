@@ -17,7 +17,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the source code
-COPY src/ ./src/
+COPY src/ ./src
 
 # Create __init__.py files to make directories proper Python packages
 RUN touch src/__init__.py && \
