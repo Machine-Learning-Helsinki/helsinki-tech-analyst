@@ -16,8 +16,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ ./src
-RUN touch src/__init__.py && touch src/data_pipeline/__init__.py && touch src/ml_logic/__init__.py
+# Copy the source code
+COPY src/ ./src/
+
+# Create __init__.py files to make directories proper Python packages
+RUN touch src/__init__.py && \
+    touch src/data_pipeline/__init__.py && \
+    touch src/ml_logic/__init__.py
 
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser

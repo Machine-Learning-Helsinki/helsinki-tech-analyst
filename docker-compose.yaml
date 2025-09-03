@@ -36,7 +36,7 @@ services:
       DB_PASSWORD: mypassword
       DB_HOST: db      # 👈 service name, not localhost
       DB_PORT: 5432
-    command: ["python", "-m", "data_pipeline.main"]
+    command: ["python", "-m", "src.data_pipeline.main"]
 
 volumes:
   postgres_data:
