@@ -75,21 +75,21 @@ services:
       - api
     volumes:
       - ./dashboard:/app
-  #pipeline:   # 👈 your Python app
-  #  build: .
-  #  container_name: pipeline_container
-  #  restart: always
-  #  depends_on:
-  #    - db
-  #  environment:
-  #    DB_NAME: mydatabase
-  #    DB_USER: ayush
-  #    DB_PASSWORD: mypassword
-  #    DB_HOST: db      # 👈 service name, not localhost
-  #    DB_PORT: 5432
-  #  command: ["python", "-m", "src.data_pipeline.main"]
-  #  volumes:
-  #    - ./logs:/app/logs
+  pipeline:   # 👈 your Python app
+    build: .
+    container_name: pipeline_container
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_NAME: mydatabase
+      DB_USER: ayush
+      DB_PASSWORD: mypassword
+      DB_HOST: db      # 👈 service name, not localhost
+      DB_PORT: 5432
+    command: ["python", "-m", "src.data_pipeline.main"]
+    volumes:
+      - ./logs:/app/logs
   
 
 volumes:
