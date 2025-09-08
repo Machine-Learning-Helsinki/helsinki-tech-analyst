@@ -56,7 +56,6 @@ finland_rss_feeds_with_urls = [
     ("Vasabladet RSS Feed", "https://vasabladet.fi"),
     ("Ilta-Sanomat RSS Feed", "https://is.fi"),
     ("Nokian Uutiset RSS Feed", "https://www.nokiankylat.fi/sorva/feed/"),
-    ("Good News from Finland RSS Feed", "https://migri.fi/en/press-releases?p_p_id=com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_h86npU2Dqv2l&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=getRSS&p_p_cacheability=cacheLevelPage"), 
     ("Kainuun Sanomat RSS Feed", "https://www.kainuunsanomat.fi/feed")
 ]
 

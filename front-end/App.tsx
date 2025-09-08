@@ -5,10 +5,9 @@ import { SubmitButton } from './components/SubmitButton';
 import { AnswerDisplay } from './components/AnswerDisplay';
 import { Header } from './components/Header';
 import { GithubIcon } from './components/icons/GithubIcon';
-import { env } from 'process';
 
 // Assume the FastAPI backend is running on this URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/ask';
+const API_URL = process.env.VITE_API_URL // 'http://127.0.0.1:8000/ask';
 
 const App = () => {
   const [question, setQuestion] = useState('');
@@ -21,6 +20,7 @@ const App = () => {
     if (!question.trim() || isLoading) {
       return;
     }
+    console.log(API_URL)
 
     setIsLoading(true);
     setError(null);

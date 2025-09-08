@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: pgvector/pgvector:0.8.0-pg15
@@ -8,7 +10,7 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: mydatabase
     ports:
-      - "5432:5432"   # expose for pgAdmin or host
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -24,35 +26,74 @@ services:
     depends_on:
       - db
 
-  pipeline:   # 👈 your Python app
-    build: .
-    container_name: pipeline_container
-    restart: always
-    depends_on:
-      - db
-    environment:
-      DB_NAME: mydatabase
-      DB_USER: ayush
-      DB_PASSWORD: mypassword
-      DB_HOST: db      # 👈 service name, not localhost
-      DB_PORT: 5432
-    command: ["python", "-m", "src.data_pipeline.main"]
-    volumes:
-      - ./logs:/app/logs
   api:
     build: 
       context: .
       dockerfile: dockerfile.fastapi
     container_name: fastapi_container
     restart: always
+    environment:
+      DB_NAME: mydatabase
+      DB_USER: ayush
+      DB_PASSWORD: mypassword
+      DB_HOST: db
+      DB_PORT: 5432
     ports:
       - "8000:8000"
     depends_on:
-      - db    
+      - db
     command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
+  frontend:
+    build:
+      context: .
+      dockerfile: dockerfile.react
+    container_name: react_container
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/ask   # Local dev API
+    depends_on:
+      - api
 
+  streamlit:
+    build:
+      context: .
+      dockerfile: dockerfile.streamlit
+    container_name: streamlit_container
+    restart: always
+    environment:
+      DB_NAME: mydatabase
+      DB_USER: ayush
+      DB_PASSWORD: mypassword
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    volumes:
+      - ./dashboard:/app
+  #pipeline:   # 👈 your Python app
+  #  build: .
+  #  container_name: pipeline_container
+  #  restart: always
+  #  depends_on:
+  #    - db
+  #  environment:
+  #    DB_NAME: mydatabase
+  #    DB_USER: ayush
+  #    DB_PASSWORD: mypassword
+  #    DB_HOST: db      # 👈 service name, not localhost
+  #    DB_PORT: 5432
+  #  command: ["python", "-m", "src.data_pipeline.main"]
+  #  volumes:
+  #    - ./logs:/app/logs
   
 
 volumes:
   postgres_data:
+
+
+  
