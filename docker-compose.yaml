@@ -38,8 +38,8 @@ services:
       DB_PASSWORD: mypassword
       DB_HOST: db
       DB_PORT: 5432
-    expose:
-      - "8000"   # only accessible inside network
+    ports:
+      - "8000:8000"   # expose API for frontend/browser
     depends_on:
       - db
     command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -49,7 +49,8 @@ services:
       context: .
       dockerfile: dockerfile.react
       args:
-        VITE_API_URL: http://api:8000/ask  # API inside Docker network
+        # API URL for browser (point to host’s port 8000, not "api")
+        VITE_API_URL: http://localhost:8000/ask
     container_name: react_container
     restart: always
     ports:
@@ -71,7 +72,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
     ports:
-      - "8501:8501"   # used internally
+      - "8501:8501"
     depends_on:
       - api
     volumes:
