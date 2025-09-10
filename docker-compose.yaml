@@ -48,9 +48,12 @@ services:
     build:
       context: .
       dockerfile: dockerfile.react
-      args:
-        # API URL for browser (point to host’s port 8000, not "api")
-        VITE_API_URL: http://localhost:8000/ask
+    env_file:
+      - .env
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_APP_STREAMLIT_URL: http://localhost:8501
+       
     container_name: react_container
     restart: always
     ports:
