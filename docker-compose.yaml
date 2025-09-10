@@ -48,12 +48,8 @@ services:
     build:
       context: .
       dockerfile: dockerfile.react
-    env_file:
-      - .env
     environment:
-      VITE_API_URL: http://localhost:8000
-      VITE_APP_STREAMLIT_URL: http://localhost:8501
-       
+      VITE_API_URL: ${VITE_API_URL}
     container_name: react_container
     restart: always
     ports:
