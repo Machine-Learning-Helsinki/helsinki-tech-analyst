@@ -13,14 +13,19 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ayush -d mydatabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: pgadmin_container
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
     ports:
       - "5050:80"
     depends_on:
@@ -41,24 +46,17 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       DATABASE: articles
     ports:
-      - "8000:8000"   # expose API for frontend/browser
+      - "8000:8000"   # expose API for debugging (optional)
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-  frontend:
-    build:
-      context: .
-      dockerfile: dockerfile.react
-    environment:
-      VITE_API_URL: ${VITE_API_URL}
-    container_name: react_container
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - api
-      - streamlit
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   streamlit:
     build:
@@ -73,18 +71,39 @@ services:
       DB_HOST: db
       DB_PORT: 5432
     ports:
-      - "8501:8501"
+      - "8501:8501"   # expose Streamlit for debugging (optional)
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     volumes:
       - ./dashboard:/src/dashboard
+
+  frontend:
+    build:
+      context: .
+      dockerfile: dockerfile.react
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost/api}
+    container_name: react_container
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+      - streamlit
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   pipeline:
     build: .
     container_name: pipeline_container
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DB_NAME: mydatabase
       DB_USER: ayush

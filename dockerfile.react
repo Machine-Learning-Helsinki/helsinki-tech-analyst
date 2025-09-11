@@ -1,32 +1,31 @@
 # --- Build stage ---
-    FROM node:20-slim AS builder
+FROM node:20-slim AS builder
+WORKDIR /app
 
-    WORKDIR /app
-    
-    # Copy package files
-    COPY ./front-end/package*.json ./
-    
-    # Install dependencies
-    RUN npm install
-    
-    # Copy source code
-    COPY ./front-end/ .
-    
-    # Build the app (Vite will embed VITE_ variables into build)
+# Copy package files
+COPY ./front-end/package*.json ./
 
+# Install dependencies
+RUN npm install
 
-    RUN npm run build
-    
-    # --- Production stage ---
-    FROM nginx:alpine
-    
-    # Copy built files
-    COPY --from=builder /app/dist /usr/share/nginx/html
-    
-    # Copy custom nginx config
-    COPY ./nginx.conf /etc/nginx/conf.d/default.conf
-    
-    EXPOSE 80
-    
-    CMD ["nginx", "-g", "daemon off;"]
-    
+# Copy source code
+COPY ./front-end/ .
+
+# Build the app (Vite will embed VITE_ variables into build)
+RUN npm run build
+
+# --- Production stage ---
+FROM nginx:alpine
+
+# Copy built files
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Create directory for nginx logs
+RUN mkdir -p /var/log/nginx
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
