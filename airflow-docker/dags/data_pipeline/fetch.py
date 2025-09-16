@@ -38,7 +38,7 @@ def fetch_rss_data(**context):
     Returns: Dictionary with feed data for each source
     """
     # RSS feeds to process
-    finland_rss_feeds_with_urls = [
+    finland_rss_feeds = [
     ("Finland Today RSS Feed", "https://finlandtoday.fi/feed"),
     ("Helsinki Times RSS Feed", "https://helsinkitimes.fi/?format=feed"),
     ("Iltalehti RSS Feed", "https://www.iltalehti.fi/rss/uutiset.xml"),
@@ -106,17 +106,7 @@ def fetch_rss_data(**context):
             print(f"Parsing RSS feed from {url}...")
             feed = feedparser.parse(url)
             
-            # Check for HTTP errors
-            if hasattr(feed, 'status') and feed.status != 200:
-                print(f"❌ Failed to fetch RSS feed, status code: {feed.status}")
-                fetched_data[name] = None
-                continue
-                
-            # Check if entries exist
-            if not hasattr(feed, 'entries') or not feed.entries:
-                print(f"⚠️ No entries found in RSS feed for {name}")
-                fetched_data[name] = []
-                continue
+            
             
             # Convert feed entries to serializable format for XCom
             entries = []

@@ -8,6 +8,7 @@ from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
 import sys
 import os
+from data_pipeline.vector_db import vectordb
 
 # Add current directory to Python path for module imports
 sys.path.insert(0, os.path.dirname(__file__))
@@ -18,6 +19,7 @@ try:
     from data_pipeline.parse import transform_rss_data
     from data_pipeline.storage import store_rss_data
     from data_pipeline.main import pipeline_summary
+    from data_pipeline.vector_db import vectordatabasePg
     print("✅ Successfully imported all pipeline modules")
 except ImportError as e:
     print(f"❌ Failed to import pipeline modules: {e}")
@@ -33,6 +35,11 @@ default_args = {
     'retries': 2,
     
 }
+
+
+
+
+
 
 # ==================== DAG DEFINITION ====================
 with DAG(
@@ -149,7 +156,23 @@ with DAG(
         pool='default_pool',
     )
 
-    # Task 4: Pipeline Summary and Additional Processing
+    # Task 4: Embeddings Processing (Optional)
+    embeddings_task = PythonOperator(
+        task_id="process_embeddings",
+        python_callable=vectordb,
+        doc_md="""
+        ## Process Embeddings
+        **Purpose**: Generate and store embeddings for new articles 
+        **Functionality**:  
+        - Connects to PostgreSQL to fetch newly stored articles
+        - Generates vector embeddings using a custom encoding function
+        - Updates articles with embeddings in the database
+        **Input**: Newly stored articles from the database
+        **Output**: Articles updated with embeddings
+        """,    
+    )
+
+    # Task 5: Pipeline Summary and Additional Processing
     pipeline_summary_task = PythonOperator(
         task_id="pipeline_summary",
         python_callable=pipeline_summary,
@@ -181,9 +204,11 @@ with DAG(
         pool='default_pool',
     )
 
+
+
     # ==================== TASK DEPENDENCIES ====================
     # Define the ETL pipeline flow
-    fetch_data_task >> transform_data_task >> store_data_task >> pipeline_summary_task
+    fetch_data_task >> transform_data_task >> store_data_task >> embeddings_task >> pipeline_summary_task
 
     # ==================== DAG DOCUMENTATION ====================
     dag.doc_md = """

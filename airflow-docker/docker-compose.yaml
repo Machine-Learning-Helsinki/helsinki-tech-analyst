@@ -96,14 +96,15 @@ services:
   postgres:
     build:
       context: .
-      dockerfile: dockerfile.postgres
-      
+      dockerfile: dockerfile.postgre
+
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s

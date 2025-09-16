@@ -47,14 +47,16 @@ def encode_custom(text: str, dim: int = EMBED_DIM, use_bigrams: bool = True):
 class vectordatabasePg:
     def __init__(self):
         try:
-            host = os.getenv("DB_HOST", "postgres")      # default to 'db' if env missing
-            port = int(os.getenv("DB_PORT", 5432)) # default to 5432
+            host = os.getenv("DB_HOST", "postgres")
+            port = int(os.getenv("DB_PORT", 5432))
             user = os.getenv("DB_USER", "airflow")
             password = os.getenv("DB_PASSWORD", "airflow")
             dbname = os.getenv("DB_NAME", "airflow")
 
             print(f"🔌 Connecting to Postgres at {host}:{port} as {user}")
-            conn = psycopg2.connect(
+            print(f"   Database: {dbname}")
+            
+            self.conn = psycopg2.connect(
                 host=host,
                 port=port,
                 user=user,
@@ -63,9 +65,6 @@ class vectordatabasePg:
             )
             self.conn.autocommit = True
             print("INFO: Connected to PostgreSQL successfully.")
-            print("✅ Database connection established")
-            return conn
-            
         except Exception as e:
             print(f"ERROR connecting to PostgreSQL: {e}")
             self.conn = None
@@ -77,7 +76,8 @@ class vectordatabasePg:
                 print("INFO: Connection closed.")
         except Exception as e:
             print(f"ERROR closing connection: {e}")
-
+            
+    
     def create_ivfflat_index(self, lists: int = 100, use_cosine: bool = True):
         if not self.conn:
             print("ERROR: No DB connection.")
@@ -98,7 +98,7 @@ class vectordatabasePg:
                 print("INFO: Index created successfully.")
         except Exception as e:
             print(f"ERROR creating index: {e}")
-
+    
     def upsert_articles(self):
         if not self.conn:
             print("ERROR: No DB connection.")
@@ -128,7 +128,7 @@ class vectordatabasePg:
                 for d in docs:
                     try:
                         summary = ""
-                        doc_id = d.get("articles_id") or d.get("id")
+                        doc_id = d.get("id") or d.get("id")
                         if d.get("summary") is None or d.get("summary").strip() == "":
                             print(f"WARNING: Article id={doc_id} has no summary, skipping...")
                             summary = d.get("title", "")
@@ -140,13 +140,14 @@ class vectordatabasePg:
                             """
                             UPDATE articles
                             SET embedding = %s
-                            WHERE articles_id = %s
+                            WHERE id = %s
                             """,
                             (emb, doc_id)
                         )
                         print(f"INFO: Updated embedding for article_id={doc_id}")
                     except Exception as e:
                         print(f"ERROR updating article {d}: {e}")
+            return self.fetch_all_articles()
         except Exception as e:
             print(f"ERROR in upsert_articles: {e}")
 
@@ -155,7 +156,7 @@ class vectordatabasePg:
         Fetch all rows (id, title, content, embedding)
         """
         with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute(f"SELECT id, title, content, embedding FROM {table};")
+            cur.execute(f"SELECT id, title, summary, embedding FROM {table};")
             rows = cur.fetchall()
             return [dict(r) for r in rows]
 
@@ -189,7 +190,7 @@ class vectordatabasePg:
             with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
                 cur.execute(
                     """
-                    SELECT articles_id, link_name, title, link, published, summary, authors,tags,embedding
+                    SELECT id, link_name, title, link, published, summary, authors,tags,embedding
                     FROM articles
                     WHERE embedding IS NOT NULL
                     ORDER BY embedding <=> %s::vector
@@ -202,3 +203,9 @@ class vectordatabasePg:
         except Exception as e:
             print(f"ERROR querying similar articles: {e}")
             return []
+def vectordb():
+
+    vectordatabase = vectordatabasePg()
+    embedd_articles = vectordatabase.upsert_articles()
+
+    return embedd_articles

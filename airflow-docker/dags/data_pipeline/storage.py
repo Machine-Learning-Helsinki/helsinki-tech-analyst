@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 from .vector_db import vectordatabasePg
 
 
+
 def store_rss_data(**context):
     """
     Task 3: Store the transformed data in PostgreSQL
@@ -29,7 +30,7 @@ def store_rss_data(**context):
     # Connect to database
     conn = connect_storage()
     cursor = conn.cursor()
-    vectordb = vectordatabasePg()
+    
     
     try:
         # Create table if it doesn't exist
@@ -91,8 +92,11 @@ def store_rss_data(**context):
             print(f"   - Skipped (duplicates): {skipped_count}")
             print(f"   - Errors: {error_count}")
         
+       
         # Commit all changes
         conn.commit()
+
+       
         
         print(f"\n📊 STORAGE SUMMARY:")
         print(f"   - Total articles stored: {total_stored}")
@@ -104,7 +108,7 @@ def store_rss_data(**context):
         db_stats = get_database_stats(cursor)
         print(f"   - Total articles in database: {db_stats.get('total_articles', 'unknown')}")
 
-        vectordb.upsert_articles()
+        
         
         # Return storage statistics
         return {
@@ -136,7 +140,7 @@ def connect_storage():
     load_dotenv()
     
     try:
-        host = os.getenv("DB_HOST", "postgre")
+        host = os.getenv("DB_HOST", "postgres")
         port = int(os.getenv("DB_PORT", 5432))
         user = os.getenv("DB_USER", "airflow")
         password = os.getenv("DB_PASSWORD", "airflow")
