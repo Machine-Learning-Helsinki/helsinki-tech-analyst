@@ -1,8 +1,10 @@
 import psycopg2
 import os 
 from dotenv import load_dotenv
+from .vector_db import vectordatabasePg
 
 SCHEMA_FILE = './src/data_pipeline/schema.sql'
+
 
 
     
@@ -43,6 +45,10 @@ def store_data(feed,conn):
        # your function to connect
     cursor = conn.cursor()
     cursor.execute(open(SCHEMA_FILE, "r").read())
+    vector_database = vectordatabasePg()
+
+
+
     try:
         if feed:
             for entry in feed:
@@ -77,6 +83,8 @@ def store_data(feed,conn):
                     
             conn.commit()
             print("INFO: Data stored successfully.")
+
+            vector_database.upsert_articles()
         else:
             print("No data to store.")
     except (Exception, psycopg2.DatabaseError) as error:

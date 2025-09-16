@@ -1,0 +1,3 @@
+FROM pgvector/postgres:15.3
+
+COPY ./storage/schema.sql /docker-entrypoint-initdb.d/

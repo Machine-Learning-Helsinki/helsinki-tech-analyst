@@ -132,11 +132,7 @@ def run_pipeline():
     print("\nINFO: 🎉 Data pipeline completed successfully.")
 
 
-if __name__ == "__main__":
-    
-    run_pipeline()
-    vector_db = vectordatabasePg()
-    vector_db.upsert_articles()
+
 
 
 
