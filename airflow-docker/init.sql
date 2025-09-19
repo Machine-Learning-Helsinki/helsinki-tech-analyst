@@ -13,3 +13,6 @@ CREATE TABLE IF NOT EXISTS articles (
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
+
+
+
