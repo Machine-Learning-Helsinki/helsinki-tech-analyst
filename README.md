@@ -5,6 +5,7 @@ graph TD
     style Nginx fill:#9f9,stroke:#333,stroke-width:2px
     style Airflow fill:#ff9,stroke:#333,stroke-width:2px
     style Grafana fill:#ff9,stroke:#333,stroke-width:2px
+    style GoogleAI fill:#87CEFA,stroke:#333,stroke-width:2px
 
     %% Subgraph for User Facing Services
     subgraph User Facing Services
@@ -20,7 +21,7 @@ graph TD
         Nginx["Nginx<br/>(Reverse Proxy)"]
         FastAPI["FastAPI Backend<br/>(api_backend)"]
         Postgres["PostgreSQL DB<br/>(pgvector)"]
-        OpenAI["OpenAI API<br/>(External LLM)"]
+        GoogleAI["Google AI Platform<br/>(Gemini Pro)"]
     end
     
     %% Subgraph for MLoPS & Data Processing
@@ -43,8 +44,8 @@ graph TD
     Nginx -- "/dashboard" --> Dashboard
     Nginx -- "/" --> Frontend
     FastAPI -- "Similarity Search<br/>(SQL Query with <=>) " --> Postgres
-    FastAPI -- "Augmented Prompt" --> OpenAI
-    OpenAI -- "Generated Answer" --> FastAPI
+    FastAPI -- "Augmented Prompt" --> GoogleAI
+    GoogleAI -- "Generated Answer" --> FastAPI
     Dashboard -- "SQL for Visuals" --> Postgres
 
     %% Data Ingestion Flow (Dashed Arrows)
