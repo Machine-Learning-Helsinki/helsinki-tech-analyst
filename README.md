@@ -1,6 +1,6 @@
 ```mermaid
 graph TD
-    %% Define Styles
+    %% Define Node Styles
     style User fill:#f9f,stroke:#333,stroke-width:2px
     style Nginx fill:#9f9,stroke:#333,stroke-width:2px
     style Airflow fill:#ff9,stroke:#333,stroke-width:2px
@@ -23,7 +23,7 @@ graph TD
         OpenAI["OpenAI API<br/>(External LLM)"]
     end
     
-    %% Subgraph for MLOps & Data Processing
+    %% Subgraph for MLoPS & Data Processing
     subgraph MLOps & Data Processing
         Airflow["Apache Airflow<br/>(Orchestrator)"]
         PipelineContainer["Data Pipeline Container<br/>(data_pipeline)"]
@@ -48,13 +48,18 @@ graph TD
     Dashboard -- "SQL for Visuals" --> Postgres
 
     %% Data Ingestion Flow (Dashed Arrows)
-    Airflow -.-> PipelineContainer
-    PipelineContainer -. "Triggers Run" .-> Websites
-    Websites -. "Fetches Data" .-> PipelineContainer
+    Airflow -. "Triggers Run" .-> PipelineContainer
+    PipelineContainer -. "Fetches Data" .-> Websites
     PipelineContainer -. "Stores Articles & Embeddings" .-> Postgres
 
-    %% Monitoring Flow (Dotted Arrows)
-    FastAPI ~~~ "Exposes /metrics" ~~~> Prometheus
-    Airflow ~~~ "Exposes Metrics" ~~~> Prometheus
-    Prometheus ~~~ "Data Source" ~~~> Grafana
-    User -- "Views Dashboards" --> Grafana
+    %% Monitoring Flow (Dotted Links - defined below)
+    FastAPI -->|Exposes /metrics| Prometheus
+    Airflow -->|Exposes Metrics| Prometheus
+    Prometheus -->|Data Source| Grafana
+    User -->|Views Dashboards| Grafana
+    
+    %% Define Link Styles for Monitoring Flow
+    linkStyle 12 stroke:#888,stroke-width:2px,stroke-dasharray: 3 3
+    linkStyle 13 stroke:#888,stroke-width:2px,stroke-dasharray: 3 3
+    linkStyle 14 stroke:#888,stroke-width:2px,stroke-dasharray: 3 3
+    linkStyle 15 stroke:#888,stroke-width:2px,stroke-dasharray: 3 3
