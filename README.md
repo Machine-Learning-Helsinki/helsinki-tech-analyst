@@ -44,7 +44,7 @@ graph TD
     Nginx -- "/" --> Frontend
     FastAPI -- "Similarity Search<br/>(SQL Query with <=>) " --> Postgres
     FastAPI -- "Augmented Prompt" --> OpenAI
-    OpenAI -- "Generated Answer" --> FastAPI
+    GenAI -- "Generated Answer" --> FastAPI
     Dashboard -- "SQL for Visuals" --> Postgres
 
     %% Data Ingestion Flow (Dashed Arrows)
