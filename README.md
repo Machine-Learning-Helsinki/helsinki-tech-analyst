@@ -43,7 +43,7 @@ graph TD
     Nginx -- "/dashboard" --> Dashboard
     Nginx -- "/" --> Frontend
     FastAPI -- "Similarity Search<br/>(SQL Query with <=>) " --> Postgres
-    FastAPI -- "Augmented Prompt" --> OpenAI
+    FastAPI -- "Augmented Prompt" --> Gemini API
     GenAI -- "Generated Answer" --> FastAPI
     Dashboard -- "SQL for Visuals" --> Postgres
 
