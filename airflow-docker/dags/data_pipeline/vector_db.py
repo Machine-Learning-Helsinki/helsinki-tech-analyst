@@ -203,6 +203,7 @@ class vectordatabasePg:
         except Exception as e:
             print(f"ERROR querying similar articles: {e}")
             return []
+        
 def vectordb():
 
     vectordatabase = vectordatabasePg()

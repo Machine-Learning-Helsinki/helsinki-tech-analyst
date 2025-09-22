@@ -452,9 +452,10 @@ def run_pipeline():
     Legacy function: Run the complete pipeline (for backward compatibility)
     This function can be used when running the pipeline outside of Airflow
     """
-    from .fetch import get_data_from_rss
-    from .transform import parse_rss_feed_articles
-    from .storage import connect_storage, store_data, get_data
+    from fetch import get_data_from_rss
+    from parse import parse_rss_feed_articles
+    from storage import connect_storage, store_data, get_data
+    from vector_db import vectordb
     
     finland_rss_feeds = [
         ("Hämeen Sanomat RSS Feed", "https://hameensanomat.fi/feed/rss"),
@@ -501,9 +502,15 @@ def run_pipeline():
     conn.close()
     print(f"\nINFO: 🎉 Data pipeline completed successfully.")
     print(f"Total articles processed: {total_articles_processed}")
+
+    vectordb()
     
+
     return {
         'status': 'completed',
         'total_articles_processed': total_articles_processed,
         'sources_processed': len(finland_rss_feeds)
     }
+
+if __name__ == "__main__":
+    run_pipeline()
