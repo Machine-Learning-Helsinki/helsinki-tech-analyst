@@ -56,22 +56,10 @@ The quality of your question will affect the quality of the answer. Here are som
 *   **Ask "What" and "Who" Questions**: The AI is excellent at finding and summarizing facts. Questions like *"What did company X announce?"* or *"Who is the CEO of company Y?"* work very well.
 *   **Remember the Data Source**: The AI's knowledge is limited to the news articles it has processed. It does not have general knowledge of the internet and cannot predict the future.
 
----
-
-## 5. Frequently Asked Questions (FAQ)
-
-**Q: Why is the response taking a while?**
-A: When you ask a question, the AI performs a complex search through hundreds of articles to find the most relevant information before generating a summary. This process can take 10-20 seconds.
-
-**Q: Why did the AI say it "couldn't answer" or "didn't have enough information"?**
-A: This means that within the news articles it has processed, there was no information relevant to your specific question. Try asking a broader question or rephrasing it.
-
-**Q: Is the information always 100% accurate?**
-A: The AI's answers are based entirely on the source news articles. If a news article contains an error, the AI may repeat it. Always consider the source of the information.
 
 ---
 
-## 6. Feedback & Support
+## 5. Feedback & Support
 
 We are constantly working to improve Ask Salmiakki! If you encounter a bug, get a strange answer, or have a suggestion, we would love to hear from you.
 
