@@ -1,0 +1,35 @@
+# Core Airflow packages
+apache-airflow>=2.5.0
+
+# RSS Feed Processing
+feedparser>=6.0.10
+
+# Web scraping and HTTP requests
+requests>=2.28.0
+beautifulsoup4>=4.11.0
+
+# Database connectivity
+psycopg2-binary>=2.9.5
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Translation services
+deep-translator>=1.11.4
+
+# Vector operations and embeddings
+numpy>=1.24.0
+sentence-transformers>=2.2.2
+scikit-learn>=1.2.0
+
+# Vector database (ChromaDB)
+chromadb>=0.4.0
+
+# Additional utilities that may be needed
+urllib3>=1.26.0
+typing-extensions>=4.4.0
+
+# Optional: For better performance and additional features
+# pandas>=1.5.0  # Uncomment if you plan to add data analysis
+# sqlalchemy>=1.4.0  # Uncomment if you want to use SQLAlchemy ORM
+# alembic>=1.8.0  # Uncomment if you need database migrations

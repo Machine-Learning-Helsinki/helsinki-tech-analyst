@@ -7,7 +7,7 @@ import psycopg2
 import os 
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from .vector_db import vectordatabasePg
+from vector_db import vectordatabasePg
 
 
 
