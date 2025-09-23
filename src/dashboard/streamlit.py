@@ -1,24 +1,8 @@
 import streamlit as st
 from datetime import date
-import sys
-import os
 
-# Add parent directory to path for imports
-# This assumes your project structure is like:
-# my_project/
-# ├── data_pipeline/
-# │   └── storage.py
-# └── streamlit_app.py
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Ensure data_pipeline.storage exists and contains connect_storage and get_data
-# Placeholder for data_pipeline.storage functions if they don't exist for testing purposes
-try:
-    from data_pipeline.storage import connect_storage, get_data
-except ImportError:
-    st.error("Could not import data_pipeline.storage. Please ensure the module exists and is accessible.")
-    st.stop() # Stop the app if essential imports fail
-
+# Change from relative to absolute import
+from src.ml_logic.storage import connect_storage, get_data
 
 # --- Database Connection and Data Retrieval ---
 try:
@@ -65,7 +49,7 @@ def count_articles_per_day(data):
         for d_item in data:
             # Assuming d_item[4] is a datetime object
             if len(d_item) > 4 and d_item[4]: # Basic check for index and not None
-                only_date = d_item[4].date()
+                only_date = d_item[7].date()
                 time_dict[only_date] = time_dict.get(only_date, 0) + 1
 
         # Sort dates for better chart display (optional but good practice)

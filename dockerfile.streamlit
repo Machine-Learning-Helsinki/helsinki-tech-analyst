@@ -11,16 +11,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Set PYTHONPATH to include the app directory
+ENV PYTHONPATH=/app:$PYTHONPATH
+
 # Copy requirements first for better caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create directory structure
 
-
-
-# Copy source code
-COPY src/ ./src
+# Copy the entire src directory
+COPY src/ ./src/
 
 # Create __init__.py files
 RUN touch src/__init__.py \

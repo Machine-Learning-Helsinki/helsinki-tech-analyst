@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.13.6
 
 LABEL maintainer="Your Name"
 LABEL description="Helsinki Tech Analyst Pipeline"
@@ -17,17 +17,15 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the source code
-COPY src/ ./src
+COPY data_pipeline/ ./src/data_pipeline
 
-# Create __init__.py files to make directories proper Python packages
-RUN touch src/__init__.py && \
-    touch src/data_pipeline/__init__.py && \
-    touch src/ml_logic/__init__.py
+# Ensure Python packages
+RUN touch src/__init__.py && touch src/data_pipeline/__init__.py
 
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
-# Document DB port
 EXPOSE 5432 8080 5000
 
+# Run pipeline
 CMD ["python", "-m", "src.data_pipeline.main"]

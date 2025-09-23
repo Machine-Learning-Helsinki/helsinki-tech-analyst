@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 from google import genai
 from google.genai import types
-from ..ml_logic.vector_db import vectordatabasePg
+from .vector_db import vectordatabasePg
 
 load_dotenv()
 
