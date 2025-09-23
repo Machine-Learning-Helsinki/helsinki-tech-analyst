@@ -6,7 +6,60 @@ Responsible for pipeline orchestration, summary, and final processing
 from datetime import datetime
 from typing import Dict, Any
 import json
+from .fetch import get_data_from_rss
+from .parse import parse_rss_feed_articles
+from .storage import connect_storage, store_data, get_data
+from .vector_db import vectordb
 
+finland_rss_feeds = [
+    ("Finland Today RSS Feed", "https://finlandtoday.fi/feed"),
+    ("Helsinki Times RSS Feed", "https://helsinkitimes.fi/?format=feed"),
+    ("Iltalehti RSS Feed", "https://www.iltalehti.fi/rss/uutiset.xml"),
+    ("Daily Finland RSS Feed", "https://dailyfinland.fi/feed/latest-.."),  # truncated URL as shown
+    ("Ilkkapohjalainen RSS Feed", "https://fiare-prod-qt-images.s3.amazonaws.com"),  # truncated or generic placeholder
+    ("Länsi-Savo RSS Feed", "https://lansi-savo.fi/feed/rss"),
+    ("Hankasalmen Sanomat RSS Feed", "https://hankasalmensanomat.fi/feed/rss"),
+    ("Hämeen Sanomat RSS Feed", "https://hameensanomat.fi/feed/rss"),
+    ("Kansan Uutiset RSS Feed", "https://ku.fi/feed"),
+    ("Aamuposti RSS Feed", "https://aamuposti.fi/feed/rss"),
+    ("Etelä-Saimaa RSS Feed", "https://esaimaa.fi/feed/rss"), 
+    ("Keskisuomalainen RSS Feed", "https://ksml.fi/feed/rss"),
+    ("Salon Seudun Sanomat RSS Feed", "https://sss.fi/feed"),
+    ("Borgåbladet RSS Feed", "https://bbl.fi/feeds/feed.xml"),
+    ("Etelä-Suomen Sanomat RSS Feed", "https://ess.fi/feed/rss"),
+    ("Uusimaa RSS Feed", "https://uusimaa.fi/feed/rss"),
+    ("Paikallislehti Sisä-Savo RSS Feed", "https://sisa-savolehti.fi/feed/rss"),
+    ("Kouvolan Sanomat RSS Feed", "https://kouvolansanomat.fi/feed/rss"),
+    ("Keskilaakso RSS Feed", "https://keskilaakso.fi/feed/rss"),
+    ("Kymen Sanomat RSS Feed", "https://kymensanomat.fi/feed/rss"),
+    ("Itä-Häme RSS Feed", "https://itahame.fi/feed/rss"),
+    ("Savon Sanomat RSS Feed", "https://savonsanomat.fi/feed/rss"),
+    ("Sydin RSS Feed", None),  # no explicit RSS URL provided
+    ("Kauppalehti RSS Feed", None),  # not shown explicitly
+    ("Aamulehti RSS Feed", None),
+    ("Hufvudstadsbladet RSS Feed", None),
+    ("Nya Åland RSS Feed", "https://nyan.ax/rss"),
+    ("Helsingin Sanomat RSS Feed", "https://www.hs.fi/rss/tiede.xml"),
+    ("Satakunnan Kansa RSS Feed", "https://satakunnankansa.fi"),
+    ("Satakunnan Viikko RSS Feed", "https://sv24.fi"),
+    ("JP-Kunnallissanomat RSS Feed", "https://jp-kunnallissanomat.fi"),
+    ("Ålandstidningen RSS Feed", "https://alandstidningen.ax"),
+    ("Turun Sanomat RSS Feed", "https://ts.fi"),
+    ("Västra Nyland RSS Feed", "https://www.vastranyland.fi/rss"),
+    ("Österbottens Tidning RSS Feed", "https://osterbottenstidning.fi"),
+    ("Järviseutu RSS Feed", "https://jarviseutu-lehti.fi"),
+    ("Lapin Kansa RSS Feed", "https://www.lapinkansa.fi/feedit/rss/newest-free/"),
+    ("Yle RSS Feed", "https://yle.fi/uutiset/rss/tuoreimmat"),
+    ("Tyrvään Sanomat RSS Feed", "https://tyrvaansanomat.fi"),
+    ("Satakunnan Kansa » Rauma Region RSS Feed", "https://satakunnankansa.fi/aihe/raum.."),  # truncated
+    ("Jämsän Seutu RSS Feed", "https://jamsanseutu.fi"),
+    ("Kaleva RSS Feed", "https://kaleva.fi"),
+    ("Itä-Savo RSS Feed", "https://www.ita-savo.fi/feed/rss/"),
+    ("Vasabladet RSS Feed", "https://vasabladet.fi"),
+    ("Ilta-Sanomat RSS Feed", "https://is.fi"),
+    ("Nokian Uutiset RSS Feed", "https://www.nokiankylat.fi/sorva/feed/"),
+    ("Kainuun Sanomat RSS Feed", "https://www.kainuunsanomat.fi/feed")
+]
 
 def pipeline_summary(**context):
     """
@@ -452,15 +505,9 @@ def run_pipeline():
     Legacy function: Run the complete pipeline (for backward compatibility)
     This function can be used when running the pipeline outside of Airflow
     """
-    from fetch import get_data_from_rss
-    from parse import parse_rss_feed_articles
-    from storage import connect_storage, store_data, get_data
-    from vector_db import vectordb
+   
     
-    finland_rss_feeds = [
-        ("Hämeen Sanomat RSS Feed", "https://hameensanomat.fi/feed/rss"),
-        ("Helsinki Times RSS Feed", "https://helsinkitimes.fi/?format=feed"),
-    ]
+    
     
     print("INFO: 🚀 Starting the data pipeline...")
     
@@ -481,8 +528,10 @@ def run_pipeline():
         # Fetch
         feed = get_data_from_rss(url)
         if not feed:
-            print(f"WARNING: ❌ Failed to fetch data from {name}, skipping...")
+            print(f"WARNING: ⚠️ No data fetched from {name}, skipping...")
             continue
+        print(f"INFO: ✅ Fetched {len(feed)} entries from {name}.")
+
         
         # Transform
         parsed_articles = parse_rss_feed_articles(feed, name)
@@ -503,7 +552,7 @@ def run_pipeline():
     print(f"\nINFO: 🎉 Data pipeline completed successfully.")
     print(f"Total articles processed: {total_articles_processed}")
 
-    vectordb()
+    
     
 
     return {
@@ -514,3 +563,4 @@ def run_pipeline():
 
 if __name__ == "__main__":
     run_pipeline()
+    vectordb()

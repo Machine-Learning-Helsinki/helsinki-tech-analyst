@@ -7,7 +7,7 @@ import psycopg2
 import os 
 from dotenv import load_dotenv
 from typing import List, Dict, Any
-from vector_db import vectordatabasePg
+
 
 
 
@@ -298,7 +298,7 @@ def store_data(articles: List[Dict[str, Any]], conn):
         conn: Database connection
     """
     cursor = conn.cursor()
-    vectordb = vectordatabasePg()
+   
     
     try:
         create_articles_table(cursor)
@@ -330,7 +330,7 @@ def store_data(articles: List[Dict[str, Any]], conn):
                 
         
         conn.commit()
-        vectordatabasePg.upsert_articles()
+        
         print(f"Storage complete - Stored: {stored_count}, Skipped: {skipped_count}")
         
     except Exception as error:

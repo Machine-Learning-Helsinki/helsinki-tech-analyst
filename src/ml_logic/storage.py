@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from .vector_db import vectordatabasePg
 
-SCHEMA_FILE = './src/data_pipeline/schema.sql'
+
 
 
 
@@ -44,7 +44,7 @@ def connect_storage():
 def store_data(feed,conn):
        # your function to connect
     cursor = conn.cursor()
-    cursor.execute(open(SCHEMA_FILE, "r").read())
+    
     vector_database = vectordatabasePg()
 
 
@@ -52,7 +52,6 @@ def store_data(feed,conn):
     try:
         if feed:
             for entry in feed:
-                cursor.execute(open(SCHEMA_FILE, "r").read())
                 cursor.execute(
                     """
                     SELECT 1 FROM articles WHERE link = %s

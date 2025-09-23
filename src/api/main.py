@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import uvicorn
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator, metrics
 
 
 from ..ml_logic.rag import answer_questions,answer_question_for_postgre
@@ -45,6 +46,12 @@ async def asking(question: Question):
     else:
         return {"answer": answer_question_for_postgre(question.question)}
 
+# Prometheus monitoring
+
+app.on_event("startup")
+async def startup():
+    metrics.set_namespace("helsinki_tech_analyst_api")
+    Instrumentator().instrument(app).expose(app)
 
     
 

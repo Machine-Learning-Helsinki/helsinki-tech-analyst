@@ -186,7 +186,7 @@ def get_data_from_api(api_url: str):
     
     try:
         response = requests.get(api_url)
-        if response.status_code == 200:
+        if response.status_code == 200 or response.status_code == 301:
             return response.json()
         else:
             print(f"Failed to fetch data from API, status code: {response.status_code}")

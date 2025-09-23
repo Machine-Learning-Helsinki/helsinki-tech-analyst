@@ -78,13 +78,9 @@ x-airflow-common:
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
     # AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ./dags:/opt/airflow/dags
-    - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/plugins:/opt/airflow/plugins
     - ./requirements.txt:/requirements.txt
     - /var/run/docker.sock:/var/run/docker.sock
 
@@ -108,7 +104,7 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./storage/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
@@ -347,7 +343,7 @@ services:
       DB_NAME: airflow
       DB_USER: airflow
       DB_PASSWORD: airflow
-      DB_HOST: airflow
+      DB_HOST: postgres
       DB_PORT: 5432
     ports:
       - "8501:8501"   # expose Streamlit for debugging (optional)
@@ -360,7 +356,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: dockerfile.react
+      dockerfile: dockerfile.react.dev
     environment:
       VITE_API_URL: http://localhost:8000
     container_name: react_container
