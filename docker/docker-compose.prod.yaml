@@ -114,6 +114,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    user: "0:0"
     
     depends_on:
       postgres:
@@ -194,7 +195,7 @@ services:
       - ./dashboard:/src/dashboard
 
   frontend:
-    image: ayushghimire95/frontend:1.0
+    image: ayushghimire95/frontend:1.2
     environment:
       VITE_API_URL: http://localhost:8000
     container_name: react_container

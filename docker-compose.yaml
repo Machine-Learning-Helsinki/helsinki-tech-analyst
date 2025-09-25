@@ -355,7 +355,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: dockerfile.react.dev
+      dockerfile: dockerfile.react
     environment:
       VITE_API_URL: http://localhost:8000
     container_name: react_container
