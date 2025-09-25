@@ -1,3 +1,8 @@
 FROM pgvector/pgvector:0.8.0-pg15
 
 COPY ./storage/init.sql /docker-entrypoint-initdb.d/
+
+LABEL tag="ayushghimire95/postgres:1.0"
+LABEL maintainer="ayush"
+LABEL description="PostgreSQL with pgvector extension for Helsinki Tech Analyst"
+LABEL version="1.0"
