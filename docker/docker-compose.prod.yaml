@@ -103,9 +103,9 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER}
       _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs 
-      - ./plugins:/opt/airflow/plugins
+      - airflow_dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - airflow_plugins:/opt/airflow/plugins
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8080:8080"
@@ -213,3 +213,6 @@ services:
 
 volumes:
   postgres-db-volume:
+  airflow_dags:
+  airflow_logs:
+  airflow_plugins:

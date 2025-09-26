@@ -5,6 +5,33 @@ echo "Checking if The user has the docker installed or not"
 
 command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed. Aborting."; exit 1; }
 
+# ## Installing pip 
+echo "Checking if docker is installed or not"
+
+command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed. Proceeding to install.";  }
+
+# Docker installation here
+
+if [ -x "$(command -v apt-get)" ]; then
+    echo "Debian-based system detected. Installing Docker using apt-get."
+    sudo apt-get update
+    sudo apt-get install -y docker.io $EXTRA_PKGS
+    sudo systemctl start docker
+    sudo systemctl enable docker
+elif [ -x "$(command -v yum)" ]; then
+    echo "Red Hat-based system detected. Installing Docker using yum."
+    sudo yum install -y docker $EXTRA_PKGS
+    sudo systemctl start docker
+    sudo systemctl enable docker
+else
+    echo "Unsupported OS. Please install Docker manually."
+    exit 1
+fi
+
+# ## Getting the docker image from the docker hub
+echo "Pulling the Docker image for development environment"
+# ...existing code...
+
 #!/usr/bin/env bash
 echo "Here we will installed all the packages required for the development environment"
 
@@ -42,29 +69,3 @@ else
   EXTRA_PKGS="docker-compose-plugin git"
 fi
 
-# ## Installing pip 
-echo "Checking if docker is installed or not"
-
-command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed. Proceeding to install.";  }
-
-# Docker installation here
-
-if [ -x "$(command -v apt-get)" ]; then
-    echo "Debian-based system detected. Installing Docker using apt-get."
-    sudo apt-get update
-    sudo apt-get install -y docker.io $EXTRA_PKGS
-    sudo systemctl start docker
-    sudo systemctl enable docker
-elif [ -x "$(command -v yum)" ]; then
-    echo "Red Hat-based system detected. Installing Docker using yum."
-    sudo yum install -y docker $EXTRA_PKGS
-    sudo systemctl start docker
-    sudo systemctl enable docker
-else
-    echo "Unsupported OS. Please install Docker manually."
-    exit 1
-fi
-
-# ## Getting the docker image from the docker hub
-echo "Pulling the Docker image for development environment"
-# ...existing code...
