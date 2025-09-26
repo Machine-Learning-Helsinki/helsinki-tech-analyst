@@ -357,7 +357,7 @@ services:
       context: .
       dockerfile: dockerfile.react
     environment:
-      VITE_API_URL: http://localhost:8000
+      VITE_API_URL: http://localhost/api
     container_name: react_container
     restart: always
     ports:
