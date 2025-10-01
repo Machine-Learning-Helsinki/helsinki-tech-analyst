@@ -4,7 +4,7 @@ Modular Airflow DAG with separate fetch, transform, store, and main tasks
 """
 
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from datetime import datetime
 import sys

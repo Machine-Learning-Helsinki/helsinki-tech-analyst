@@ -41,6 +41,10 @@ ENV_TYPE=$(echo "${ENV_TYPE:-development}" | tr '[:upper:]' '[:lower:]')
 
 if [[ "$ENV_TYPE" == "production" || "$ENV_TYPE" == "prod" || "$ENV_TYPE" == "p" ]]; then
   echo "Production environment selected"
+  command mkdir -p ./dags ./logs ./plugins
+
+  commad sudo chown -R 50000:0 ./dags ./logs ./plugins 
+  
   EXTRA_PKGS=""
   DOCKER_COMPOSE_FILE="./docker/docker-compose.yaml"
   if [ -f "$DOCKER_COMPOSE_FILE" ]; then
@@ -68,4 +72,6 @@ else
   # Add development helpers (adjust as needed)
   EXTRA_PKGS="docker-compose-plugin git"
 fi
+
+
 
