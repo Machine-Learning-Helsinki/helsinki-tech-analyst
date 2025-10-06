@@ -4,7 +4,7 @@ import math
 import hashlib
 from typing import List, Dict, Optional, Iterable, Tuple
 from dotenv import load_dotenv
-from ..data_pipeline.storage import connect_storage
+from .storage import connect_storage
 
 import psycopg2
 import psycopg2.extras

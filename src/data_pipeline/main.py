@@ -6,7 +6,7 @@ Responsible for pipeline orchestration, summary, and final processing
 from datetime import datetime
 from typing import Dict, Any
 import json
-from .fetch import get_data_from_rss
+from .fetch import get_data_from_rss, fetch_rss_data
 from .parse import parse_rss_feed_articles
 from .storage import connect_storage, store_data, get_data
 from .vector_db import vectordb

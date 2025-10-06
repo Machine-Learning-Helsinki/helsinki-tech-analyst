@@ -3,15 +3,17 @@ FROM python:3.13-slim
 LABEL maintainer="ayush"
 LABEL description="Streamlit Dashboard for Helsinki Tech Analyst"
 LABEL version="1.0"
+LABEL tag="ayushghimire95/streamlit:1.1"
 
 WORKDIR /app
+
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Set PYTHONPATH to include the app directory
+# Set PYTHONPATH to include the project root
 ENV PYTHONPATH=/app:$PYTHONPATH
 
 # Copy requirements first for better caching

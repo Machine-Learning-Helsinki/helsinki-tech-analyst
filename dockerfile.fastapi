@@ -3,6 +3,7 @@ FROM python:3.13-slim
 LABEL maintainer="Your Name"
 LABEL description="Helsinki Tech Analyst FastAPI Service"
 LABEL version="1.0"
+LABEL tag="ayushghimire95/fastapi:1.0"
 
 WORKDIR /app
 
