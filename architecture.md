@@ -1,18 +1,6 @@
 # Ask Salmiakki: System Architecture
 
-## 1. Guiding Principles
-
-The architecture of **Ask Salmiakki** is designed around a set of modern software engineering and MLOps principles. The primary goal is to create a system that is modular, scalable, observable, and automated.
-
-*   **Service-Oriented Design**: Each core component (API, dashboard, data pipeline) is treated as a distinct service with a single responsibility. This promotes separation of concerns and independent development.
-*   **Containerization First**: All services are designed to be run within **Docker** containers, ensuring a consistent and reproducible environment from local development to production.
-*   **Infrastructure as Code**: The entire multi-service environment is defined declaratively using **Docker Compose**, allowing the whole stack to be brought up or down with simple commands.
-*   **Automation & Orchestration**: Manual tasks are minimized. The data ingestion pipeline is fully automated and scheduled by **Apache Airflow**.
-*   **Observability**: The system is not a "black box." It is designed to be monitored, with key performance indicators exposed via **Prometheus** and visualized in **Grafana**.
-
----
-
-## 2. Architectural Diagram
+Architectural Diagram
 
 This diagram provides a high-level visual representation of the components and their interactions. The architecture is divided into logical layers: User Facing Services, Core API & Data Store, MLOps & Data Processing, and Monitoring.
 
