@@ -203,10 +203,11 @@ services:
       - airflow_secret_key
       - airflow_admin_password
     volumes:
+      - ./entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
-      - ./docker/entrypoint.sh:/entrypoint.sh:ro
+      
     entrypoint: /bin/bash
     command: >
       -c "
@@ -248,10 +249,11 @@ services:
       - airflow_fernet_key
       - airflow_secret_key
     volumes:
+      - ./entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins:ro
-      - ./docker/entrypoint.sh:/entrypoint.sh:ro
+      
   
     expose:
       - 8080
@@ -303,7 +305,7 @@ services:
     secrets:
       - airflow_fernet_key
     volumes:
-      - ./docker/entrypoint.sh:/entrypoint.sh:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
       - airflow_logs:/opt/airflow/logs:ro
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_plugins:/opt/airflow/plugins:ro
@@ -354,10 +356,11 @@ services:
     secrets:
       - airflow_fernet_key
     volumes:
+      - ./entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_logs:/opt/airflow/logs:ro
       - airflow_plugins:/opt/airflow/plugins:ro
-      - ./docker/entrypoint.sh:/entrypoint.sh:ro
+      
     command: celery worker
     healthcheck:
       test: ["CMD-SHELL", "celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d celery@$${HOSTNAME}"]
@@ -429,7 +432,7 @@ services:
 
   # ============= APPLICATION SERVICES =============
   api:
-    image: ayushghimire95/fastapi:1.4
+    image: ayushghimire95/fastapi:1.
     container_name: fastapi_prod
     networks:
       - backend
