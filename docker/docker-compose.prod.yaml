@@ -204,7 +204,7 @@ services:
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
-      
+    user: "50000:50000"
     entrypoint: /entrypoint.sh
     command: >
       bash -c "
