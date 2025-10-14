@@ -62,12 +62,10 @@ services:
       - db
     environment:
       POSTGRES_USER: airflow
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_PASSWORD_FILE: airflow
       POSTGRES_DB: airflow
       POSTGRES_INITDB_ARGS: "-E UTF8"
       PGDATA: /var/lib/postgresql/data/pgdata
-    secrets:
-      - postgres_password
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data/pgdata
       - postgres-backup:/backups
@@ -115,13 +113,12 @@ services:
       - backend
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@yourdomain.com}
-      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/pgadmin_password
+      PGADMIN_DEFAULT_PASSWORD_FILE: admin123
       PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
       PGADMIN_CONFIG_SESSION_COOKIE_SECURE: 'True'
       PGADMIN_CONFIG_SESSION_COOKIE_HTTPONLY: 'True'
       PGADMIN_CONFIG_SESSION_COOKIE_SAMESITE: 'Lax'
-    secrets:
-      - pgadmin_password
+    
     volumes:
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
       - ./pgadmin/pgpass:/pgadmin4/pgpass:ro
@@ -189,7 +186,7 @@ services:
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@postgres/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
       AIRFLOW__WEBSERVER__SECRET_KEY_FILE: /run/secrets/airflow_secret_key
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -210,7 +207,13 @@ services:
       
     entrypoint: /entrypoint.sh
     command: >
-      -c "
+      bash -c "
+      mkdir -p /opt/airflow/logs/scheduler &&
+      mkdir -p /opt/airflow/logs/dag_processor_manager &&
+      mkdir -p /opt/airflow/dags &&
+      mkdir -p /opt/airflow/plugins &&
+      chown -R 50000:50000 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
+      chmod -R 775 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
       airflow db migrate &&
       airflow users create --role Admin --username $${_AIRFLOW_WWW_USER_USERNAME} --email admin@example.com --firstname Admin --lastname User --password $$(cat /run/secrets/airflow_admin_password) || true
       "
@@ -225,14 +228,14 @@ services:
   airflow-webserver:
     image: apache/airflow:2.9.1
     container_name: airflow_webserver
-    
+    entrypoint: /entrypoint.sh
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@postgres/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
       AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
       AIRFLOW__WEBSERVER__SECRET_KEY_FILE: /run/secrets/airflow_secret_key
@@ -249,7 +252,6 @@ services:
     secrets:
       - airflow_fernet_key
       - airflow_secret_key
-    entrypoint: /entrypoint.sh
     volumes:
       - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
@@ -295,8 +297,8 @@ services:
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@postgres/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
       AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -349,8 +351,8 @@ services:
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@postgres/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
       AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -358,7 +360,6 @@ services:
       AIRFLOW__CELERY__WORKER_CONCURRENCY: 16
     secrets:
       - airflow_fernet_key
-    entrypoint: /entrypoint.sh
     volumes:
       - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
@@ -403,7 +404,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
       AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
       AIRFLOW__CELERY__FLOWER_BASIC_AUTH: ${FLOWER_USER:-admin}:${FLOWER_PASSWORD}
     command: celery flower
     expose:
@@ -436,7 +437,7 @@ services:
 
   # ============= APPLICATION SERVICES =============
   api:
-    image: ayushghimire95/fastapi:1.
+    image: ayushghimire95/fastapi:1.4
     container_name: fastapi_prod
     networks:
       - backend
