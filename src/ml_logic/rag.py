@@ -6,7 +6,7 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 from google import genai
 from google.genai import types
-from .vector_db import vectordatabasePg
+
 
 load_dotenv()
 
@@ -24,6 +24,7 @@ def get_gemini_client():
 # 1. Answer questions using ChromaDB
 # -----------------------------
 def answer_questions(question: str):
+    
     try:
         print("DEBUG: Initializing embedding model...")
         model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -79,6 +80,7 @@ def answer_questions(question: str):
 # 2. Answer questions using PostgreSQL
 # -----------------------------
 def answer_question_for_postgre(question: str):
+    from .vector_db import vectordatabasePg
     try:
         vectordatabase = vectordatabasePg()
         results = vectordatabase.query_similar_articles(query_text=question, top_k=5)
@@ -122,6 +124,7 @@ def answer_question_for_postgre(question: str):
 # 3. Process embeddings & store in ChromaDB
 # -----------------------------
 def process_and_store_embeddings(documents: list[str]):
+    
     try:
         print("DEBUG: Initializing embedding model...")
         model = SentenceTransformer("all-MiniLM-L6-v2")

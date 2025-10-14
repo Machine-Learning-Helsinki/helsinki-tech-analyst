@@ -4,7 +4,7 @@ import math
 import hashlib
 from typing import List, Dict, Optional, Iterable, Tuple
 from dotenv import load_dotenv
-from .storage import connect_storage
+
 
 import psycopg2
 import psycopg2.extras
@@ -47,6 +47,7 @@ def encode_custom(text: str, dim: int = EMBED_DIM, use_bigrams: bool = True):
 class vectordatabasePg:
     def __init__(self):
         try:
+            from .storage import connect_storage
             self.conn = connect_storage()
             self.conn.autocommit = True
             print("INFO: Connected to PostgreSQL successfully.")

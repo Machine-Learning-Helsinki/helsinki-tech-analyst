@@ -52,6 +52,7 @@ if [[ "$ENV_TYPE" =~ ^(production|prod|p)$ ]]; then
     echo "🌍 Production environment selected."
     mkdir -p ./dags ./logs ./plugins
     sudo chown -R 50000:0 ./dags ./logs ./plugins
+    chmod +x docker/entrypoint.sh
 
     DOCKER_COMPOSE_FILE="./docker/docker-compose.yaml"
     if [ -f "$DOCKER_COMPOSE_FILE" ]; then

@@ -1,7 +1,7 @@
 import psycopg2
 import os 
 from dotenv import load_dotenv
-from .vector_db import vectordatabasePg
+
 
 
 
@@ -10,6 +10,7 @@ from .vector_db import vectordatabasePg
     
 
 def connect_storage():
+    
     print(f'******** DATABASE CONNECTION ********\n')
     load_dotenv()
     DATABASE_URL = os.getenv("DB_URL")
@@ -42,10 +43,12 @@ def connect_storage():
     
 
 def store_data(feed,conn):
+    from .vector_db import vectordatabasePg
        # your function to connect
     cursor = conn.cursor()
     
     vector_database = vectordatabasePg()
+    
 
 
 
