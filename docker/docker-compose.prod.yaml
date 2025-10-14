@@ -203,12 +203,12 @@ services:
       - airflow_secret_key
       - airflow_admin_password
     volumes:
-      - ./entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
       
-    entrypoint: /bin/bash
+    entrypoint: /entrypoint.sh
     command: >
       -c "
       airflow db migrate &&
@@ -225,6 +225,7 @@ services:
   airflow-webserver:
     image: apache/airflow:2.9.1
     container_name: airflow_webserver
+    
     networks:
       - backend
       - db
@@ -248,8 +249,9 @@ services:
     secrets:
       - airflow_fernet_key
       - airflow_secret_key
+    entrypoint: /entrypoint.sh
     volumes:
-      - ./entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins:ro
@@ -304,6 +306,7 @@ services:
       AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 300
     secrets:
       - airflow_fernet_key
+    entrypoint: /entrypoint.sh
     volumes:
       - ./entrypoint.sh:/entrypoint.sh:ro
       - airflow_logs:/opt/airflow/logs:ro
@@ -355,8 +358,9 @@ services:
       AIRFLOW__CELERY__WORKER_CONCURRENCY: 16
     secrets:
       - airflow_fernet_key
+    entrypoint: /entrypoint.sh
     volumes:
-      - ./entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_logs:/opt/airflow/logs:ro
       - airflow_plugins:/opt/airflow/plugins:ro
