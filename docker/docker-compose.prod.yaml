@@ -1,15 +1,6 @@
 version: "3.9"
 
 # Production-ready Airflow cluster configuration with CeleryExecutor
-# 
-# IMPORTANT: Before deploying to production:
-# 1. Generate strong secrets using: openssl rand -base64 32
-# 2. Set all environment variables in .env file
-# 3. Configure SSL/TLS certificates
-# 4. Review and adjust resource limits based on workload
-# 5. Set up external monitoring and alerting
-# 6. Configure automated backups
-# 7. Review security policies and network isolation
 
 networks:
   frontend:
@@ -39,20 +30,6 @@ volumes:
   nginx-logs:
     driver: local
 
-secrets:
-  postgres_password:
-    file: ./secrets/postgres_password.txt
-  airflow_fernet_key:
-    file: ./secrets/airflow_fernet_key.txt
-  airflow_secret_key:
-    file: ./secrets/airflow_secret_key.txt
-  airflow_admin_password:
-    file: ./secrets/airflow_admin_password.txt
-  gemini_api_key:
-    file: ./secrets/gemini_api_key.txt
-  pgadmin_password:
-    file: ./secrets/pgadmin_password.txt
-
 services:
   # ============= DATABASE LAYER =============
   postgres:
@@ -62,7 +39,7 @@ services:
       - db
     environment:
       POSTGRES_USER: airflow
-      POSTGRES_PASSWORD_FILE: airflow
+      POSTGRES_PASSWORD: airflow123
       POSTGRES_DB: airflow
       POSTGRES_INITDB_ARGS: "-E UTF8"
       PGDATA: /var/lib/postgresql/data/pgdata
@@ -112,13 +89,12 @@ services:
       - db
       - backend
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@yourdomain.com}
-      PGADMIN_DEFAULT_PASSWORD_FILE: admin123
+      PGADMIN_DEFAULT_EMAIL: admin@yourdomain.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
       PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
       PGADMIN_CONFIG_SESSION_COOKIE_SECURE: 'True'
       PGADMIN_CONFIG_SESSION_COOKIE_HTTPONLY: 'True'
       PGADMIN_CONFIG_SESSION_COOKIE_SAMESITE: 'Lax'
-    
     volumes:
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
       - ./pgadmin/pgpass:/pgadmin4/pgpass:ro
@@ -148,7 +124,7 @@ services:
       - backend
     command: >
       redis-server
-      --requirepass ${REDIS_PASSWORD}
+      --requirepass redis123
       --maxmemory 512mb
       --maxmemory-policy allkeys-lru
       --save 60 1000
@@ -181,31 +157,26 @@ services:
   airflow-init:
     image: apache/airflow:2.9.1
     container_name: airflow_init
+    user: "0:0"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
-      AIRFLOW__WEBSERVER__SECRET_KEY_FILE: /run/secrets/airflow_secret_key
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
+      AIRFLOW__WEBSERVER__SECRET_KEY: airflow-secret-key-change-me
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
-      _AIRFLOW_WWW_USER_PASSWORD_FILE: /run/secrets/airflow_admin_password
-    secrets:
-      - airflow_fernet_key
-      - airflow_secret_key
-      - airflow_admin_password
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin123
+      _AIRFLOW_WWW_USER_EMAIL: admin@example.com
     volumes:
-      - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
-    user: "50000:50000"
-    entrypoint: /entrypoint.sh
     command: >
       bash -c "
       mkdir -p /opt/airflow/logs/scheduler &&
@@ -215,7 +186,7 @@ services:
       chown -R 50000:50000 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
       chmod -R 775 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
       airflow db migrate &&
-      airflow users create --role Admin --username $${_AIRFLOW_WWW_USER_USERNAME} --email admin@example.com --firstname Admin --lastname User --password $$(cat /run/secrets/airflow_admin_password) || true
+      airflow users create --role Admin --username admin --email admin@example.com --firstname Admin --lastname User --password admin123 || true
       "
     depends_on:
       postgres:
@@ -228,17 +199,17 @@ services:
   airflow-webserver:
     image: apache/airflow:2.9.1
     container_name: airflow_webserver
-    entrypoint: /entrypoint.sh
+    user: "50000:50000"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-      AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
-      AIRFLOW__WEBSERVER__SECRET_KEY_FILE: /run/secrets/airflow_secret_key
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
+      AIRFLOW__WEBSERVER__SECRET_KEY: airflow-secret-key-change-me
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
@@ -249,16 +220,11 @@ services:
       AIRFLOW__WEBSERVER__WORKERS: 4
       AIRFLOW__WEBSERVER__WORKER_REFRESH_INTERVAL: 30
       AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: 3
-    secrets:
-      - airflow_fernet_key
-      - airflow_secret_key
     volumes:
-      - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins:ro
-      
-  
+    command: airflow webserver
     expose:
       - 8080
     healthcheck:
@@ -292,29 +258,26 @@ services:
   airflow-scheduler:
     image: apache/airflow:2.9.1
     container_name: airflow_scheduler
+    user: "50000:50000"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-      AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT: 'false'
       AIRFLOW__SCHEDULER__MAX_TIS_PER_QUERY: 512
       AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 300
-    secrets:
-      - airflow_fernet_key
-    entrypoint: /entrypoint.sh
     volumes:
-      - ./entrypoint.sh:/entrypoint.sh:ro
-      - airflow_logs:/opt/airflow/logs:ro
+      - airflow_logs:/opt/airflow/logs
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_plugins:/opt/airflow/plugins:ro
-    command: scheduler
+    command: airflow scheduler
     healthcheck:
       test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $${HOSTNAME}"]
       interval: 30s
@@ -346,26 +309,23 @@ services:
   airflow-worker:
     image: apache/airflow:2.9.1
     container_name: airflow_worker
+    user: "50000:50000"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-      AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/airflow_fernet_key
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__CELERY__WORKER_CONCURRENCY: 16
-    secrets:
-      - airflow_fernet_key
     volumes:
-      - ./docker/entrypoint.sh:/entrypoint.sh:ro
       - airflow_dags:/opt/airflow/dags:ro
-      - airflow_logs:/opt/airflow/logs:ro
+      - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins:ro
-      
     command: celery worker
     healthcheck:
       test: ["CMD-SHELL", "celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d celery@$${HOSTNAME}"]
@@ -399,13 +359,14 @@ services:
   airflow-flower:
     image: apache/airflow:2.9.1
     container_name: airflow_flower
+    user: "50000:50000"
     networks:
       - backend
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__FLOWER_BASIC_AUTH: ${FLOWER_USER:-admin}:${FLOWER_PASSWORD}
+      AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__FLOWER_BASIC_AUTH: admin:admin123
     command: celery flower
     expose:
       - 5555
@@ -445,15 +406,13 @@ services:
     environment:
       DB_NAME: airflow
       DB_USER: airflow
-      DB_PASSWORD: airflow
+      DB_PASSWORD: airflow123
       DB_HOST: postgres
       DB_PORT: 5432
-      GEMINI_API_KEY_FILE: /run/secrets/gemini_api_key
+      GEMINI_API_KEY: your-gemini-api-key-here
       DATABASE: articles
       WORKERS: 4
       LOG_LEVEL: info
-    secrets:
-      - gemini_api_key
     expose:
       - 8000
     command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--log-level", "info"]
@@ -490,7 +449,7 @@ services:
     environment:
       DB_NAME: airflow
       DB_USER: airflow
-      DB_PASSWORD: airflow
+      DB_PASSWORD: airflow123
       DB_HOST: postgres
       DB_PORT: 5432
     expose:
@@ -553,6 +512,3 @@ services:
       - api
       - streamlit
       - airflow-webserver
-
-  # ============= MONITORING =============
-  
