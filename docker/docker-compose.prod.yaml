@@ -1,5 +1,3 @@
-version: "3.9"
-
 # Production-ready Airflow cluster configuration with CeleryExecutor
 
 networks:
@@ -14,26 +12,43 @@ networks:
 
 volumes:
   postgres-db-volume:
-    driver: local
   postgres-backup:
-    driver: local
   airflow_dags:
-    driver: local
   airflow_logs:
-    driver: local
   airflow_plugins:
-    driver: local
   redis-data:
-    driver: local
   nginx-certs:
-    driver: local
   nginx-logs:
-    driver: local
 
 services:
+  # ============= VOLUME INIT =============
+  volume-init:
+    image: busybox:latest
+    container_name: volume_init
+    user: "0:0"
+    volumes:
+      - airflow_dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - airflow_plugins:/opt/airflow/plugins
+    command: >
+      sh -c "
+      echo 'Creating Airflow directories...' &&
+      mkdir -p /opt/airflow/logs &&
+      mkdir -p /opt/airflow/logs/scheduler &&
+      mkdir -p /opt/airflow/logs/dag_processor_manager &&
+      mkdir -p /opt/airflow/dags &&
+      mkdir -p /opt/airflow/plugins &&
+      echo 'Setting permissions to 777 for all directories...' &&
+      chmod -R 777 /opt/airflow &&
+      echo 'Verifying permissions...' &&
+      ls -la /opt/airflow/ &&
+      echo 'Volume initialization complete!'
+      "
+    restart: "no"
+
   # ============= DATABASE LAYER =============
   postgres:
-    image: ayushghimire95/postgre:1.0
+    image: postgres:15-alpine
     container_name: postgres_prod
     networks:
       - db
@@ -41,46 +56,14 @@ services:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow123
       POSTGRES_DB: airflow
-      POSTGRES_INITDB_ARGS: "-E UTF8"
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgres-db-volume:/var/lib/postgresql/data/pgdata
-      - postgres-backup:/backups
-      - ./storage/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    command: >
-      postgres
-      -c max_connections=200
-      -c shared_buffers=256MB
-      -c effective_cache_size=1GB
-      -c maintenance_work_mem=128MB
-      -c checkpoint_completion_target=0.9
-      -c wal_buffers=16MB
-      -c default_statistics_target=100
-      -c random_page_cost=1.1
-      -c effective_io_concurrency=200
-      -c work_mem=2621kB
-      -c min_wal_size=1GB
-      -c max_wal_size=4GB
 
   pgadmin:
     image: dpage/pgadmin4:8.10
@@ -91,27 +74,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@yourdomain.com
       PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
-      PGADMIN_CONFIG_SESSION_COOKIE_SECURE: 'True'
-      PGADMIN_CONFIG_SESSION_COOKIE_HTTPONLY: 'True'
-      PGADMIN_CONFIG_SESSION_COOKIE_SAMESITE: 'Lax'
-    volumes:
-      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
-      - ./pgadmin/pgpass:/pgadmin4/pgpass:ro
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
     depends_on:
       postgres:
         condition: service_healthy
@@ -122,73 +85,53 @@ services:
     container_name: redis_prod
     networks:
       - backend
-    command: >
-      redis-server
-      --requirepass redis123
-      --maxmemory 512mb
-      --maxmemory-policy allkeys-lru
-      --save 60 1000
-      --appendonly yes
-      --appendfsync everysec
+    command: redis-server --requirepass redis123
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
-      start_period: 10s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   # ============= AIRFLOW INIT =============
   airflow-init:
     image: apache/airflow:2.9.1
     container_name: airflow_init
-    user: "0:0"
+    user: "50000:0"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
       AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
       AIRFLOW__WEBSERVER__SECRET_KEY: airflow-secret-key-change-me
-      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      _AIRFLOW_DB_MIGRATE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: admin
-      _AIRFLOW_WWW_USER_PASSWORD: admin123
-      _AIRFLOW_WWW_USER_EMAIL: admin@example.com
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+      AIRFLOW__LOGGING__DAG_PROCESSOR_MANAGER_LOG_LOCATION: /opt/airflow/logs/dag_processor_manager/dag_processor_manager.log
     volumes:
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
+    entrypoint: /bin/bash
     command: >
-      bash -c "
-      mkdir -p /opt/airflow/logs/scheduler &&
-      mkdir -p /opt/airflow/logs/dag_processor_manager &&
-      mkdir -p /opt/airflow/dags &&
-      mkdir -p /opt/airflow/plugins &&
-      chown -R 50000:50000 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
-      chmod -R 775 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
+      -c "
+      echo 'Waiting for volume initialization...' &&
+      sleep 5 &&
+      echo 'Checking directory permissions...' &&
+      ls -la /opt/airflow/ &&
+      echo 'Running database migration...' &&
       airflow db migrate &&
-      airflow users create --role Admin --username admin --email admin@example.com --firstname Admin --lastname User --password admin123 || true
+      echo 'Creating admin user...' &&
+      airflow users create --role Admin --username admin --email admin@example.com --firstname Admin --lastname User --password admin123 || true &&
+      echo 'Airflow initialization complete!'
       "
     depends_on:
+      volume-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
@@ -199,160 +142,114 @@ services:
   airflow-webserver:
     image: apache/airflow:2.9.1
     container_name: airflow_webserver
-    user: "50000:50000"
+    user: "50000:0"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
       AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
       AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
       AIRFLOW__WEBSERVER__SECRET_KEY: airflow-secret-key-change-me
-      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
-      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
-      AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: 'true'
-      AIRFLOW__CORE__CHECK_SLAS: 'true'
-      AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT: 'false'
-      AIRFLOW__WEBSERVER__WORKERS: 4
-      AIRFLOW__WEBSERVER__WORKER_REFRESH_INTERVAL: 30
-      AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: 3
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
     volumes:
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins:ro
     command: airflow webserver
-    expose:
-      - 8080
+    ports:
+      - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
 
   airflow-scheduler:
     image: apache/airflow:2.9.1
     container_name: airflow_scheduler
-    user: "50000:50000"
+    user: "50000:0"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
       AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
       AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
-      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT: 'false'
-      AIRFLOW__SCHEDULER__MAX_TIS_PER_QUERY: 512
-      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 300
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+      AIRFLOW__SCHEDULER__CHILD_PROCESS_LOG_DIRECTORY: /opt/airflow/logs/scheduler
     volumes:
       - airflow_logs:/opt/airflow/logs
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_plugins:/opt/airflow/plugins:ro
     command: airflow scheduler
     healthcheck:
-      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $${HOSTNAME}"]
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname ${HOSTNAME}"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
 
-  airflow-worker:
+  airflow-worker-1:
     image: apache/airflow:2.9.1
-    container_name: airflow_worker
-    user: "50000:50000"
+    container_name: airflow_worker_1
+    user: "50000:0"
     networks:
       - backend
       - db
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
       AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
       AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
-      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__CELERY__WORKER_CONCURRENCY: 16
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
     volumes:
       - airflow_dags:/opt/airflow/dags:ro
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins:ro
     command: celery worker
-    healthcheck:
-      test: ["CMD-SHELL", "celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d celery@$${HOSTNAME}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
     restart: unless-stopped
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          cpus: '4'
-          memory: 4G
-        reservations:
-          cpus: '2'
-          memory: 2G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-worker-2:
+    image: apache/airflow:2.9.1
+    container_name: airflow_worker_2
+    user: "50000:0"
+    networks:
+      - backend
+      - db
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: d7I2QzTuWsVmCKqVJADzxrDf1A5QvK-lP6M7nXyZaBQ=
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+    volumes:
+      - airflow_dags:/opt/airflow/dags:ro
+      - airflow_logs:/opt/airflow/logs
+      - airflow_plugins:/opt/airflow/plugins:ro
+    command: celery worker
+    restart: unless-stopped
+    depends_on:
       airflow-init:
         condition: service_completed_successfully
 
@@ -363,42 +260,19 @@ services:
     networks:
       - backend
     environment:
-      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
       AIRFLOW__CELERY__BROKER_URL: redis://:redis123@redis:6379/0
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow123@postgres/airflow
       AIRFLOW__CELERY__FLOWER_BASIC_AUTH: admin:admin123
     command: celery flower
-    expose:
-      - 5555
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+    ports:
+      - "5555:5555"
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
     depends_on:
-      redis:
-        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
 
   # ============= APPLICATION SERVICES =============
   api:
-    image: ayushghimire95/fastapi:1.4
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.10
     container_name: fastapi_prod
     networks:
       - backend
@@ -410,38 +284,15 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       GEMINI_API_KEY: your-gemini-api-key-here
-      DATABASE: articles
-      WORKERS: 4
-      LOG_LEVEL: info
-    expose:
-      - 8000
-    command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--log-level", "info"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+    ports:
+      - "8000:8000"
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
     depends_on:
       postgres:
         condition: service_healthy
 
   streamlit:
-    image: ayushghimire95/streamlit:1.0
+    image: python:3.10-slim
     container_name: streamlit_prod
     networks:
       - backend
@@ -452,29 +303,21 @@ services:
       DB_PASSWORD: airflow123
       DB_HOST: postgres
       DB_PORT: 5432
-    expose:
-      - 8501
+    ports:
+      - "8501:8501"
+    command: >
+      bash -c "
+      pip install streamlit && 
+      streamlit run /src/dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+      "
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
     volumes:
       - ./dashboard:/src/dashboard:ro
     depends_on:
-      api:
+      postgres:
         condition: service_healthy
 
-  # ============= REVERSE PROXY & LOAD BALANCER =============
+  # ============= REVERSE PROXY =============
   nginx:
     image: nginx:1.25-alpine
     container_name: nginx_prod
@@ -487,27 +330,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - nginx-certs:/etc/nginx/certs:ro
-      - nginx-logs:/var/log/nginx
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
     depends_on:
       - api
       - streamlit
