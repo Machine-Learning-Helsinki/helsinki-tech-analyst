@@ -48,7 +48,7 @@ services:
 
   # ============= DATABASE LAYER =============
   postgres:
-    image: postgres:15-alpine
+    image: ayushghimire95/postgre:linux
     container_name: postgres_prod
     networks:
       - db
