@@ -49,7 +49,7 @@ services:
   # ============= DATABASE LAYER =============
   postgres:
     image: ayushghimire95/postgre:linux
-    container_name: postgres_prod
+    container_name: postgres
     networks:
       - db
     environment:
@@ -178,7 +178,7 @@ services:
   airflow-webserver:
     image: apache/airflow:2.9.1
     container_name: airflow_webserver
-    user: "50000:0"
+    
     networks:
       - backend
       - db

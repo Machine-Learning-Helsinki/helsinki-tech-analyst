@@ -56,7 +56,7 @@ with DAG(
 
     run_docker_pipeline = DockerOperator(
         task_id="run_docker_pipeline",
-        image="ayushghimire95/data-pipeline:1.8",
+        image="ayushghimire95/data-pipeline:linux",
         api_version="auto",
         auto_remove=True,
         docker_url="unix://var/run/docker.sock",
