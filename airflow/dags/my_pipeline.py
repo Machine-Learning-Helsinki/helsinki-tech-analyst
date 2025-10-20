@@ -61,7 +61,7 @@ with DAG(
         auto_remove=True,
         docker_url="unix://var/run/docker.sock",
         # Use the same Docker network as your docker-compose services
-        network_mode="helsinki-tech-analyst_default",
+        network_mode="docker_db",
         command="python -m src.data_pipeline.main" ,  # replace with your actual docker-compose network name
         mount_tmp_dir=False,
     )
